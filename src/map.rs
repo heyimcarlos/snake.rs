@@ -63,26 +63,19 @@ fn load_map(
     // };
     // println!("{}", camera.world_to_viewport());
     println!("WINDOW: W:{}, H:{}", window.width(), window.height());
-    for y in 0..map.height {
-        for x in 0..map.width {
-            let start_x =
-                -window.width() / 2. + (window.width() - (map.width as f32 * CELL_WIDTH)) / 2.;
-            let start_y =
-                -window.height() / 2. + (window.height() - (map.height as f32 * CELL_HEIGHT)) / 2.;
-            // (column - columns length / 2) * cell_width + cell_width / 2;
-            // let x = (start_x as f32 - map.width as f32 / 2.) * CELL_WIDTH + (CELL_WIDTH / 2.);
-            // let y = (start_y as f32 - map.height as f32 / 2.) * CELL_HEIGHT + (CELL_HEIGHT / 2.);
-            // let pos_x = start_x + x as f32 * CELL_WIDTH + CELL_WIDTH / 2.;
-            // let pos_y = start_y + y as f32 * CELL_HEIGHT + CELL_HEIGHT / 2.;
-            let pos_x = (x as f32 - map.width as f32 / 2.) + 0.5;
-            let pos_y = (y as f32 - map.height as f32 / 2.) + 0.5;
-            match map.grid[y][x] {
+    for row in 0..map.height {
+        for column in 0..map.width {
+            let start_x = -window.width() / 2.;
+            let start_y = -window.height() / 2.;
+            let x = start_x + column as f32 * CELL_WIDTH + CELL_WIDTH / 2.;
+            let y = start_y + row as f32 * CELL_HEIGHT + CELL_HEIGHT / 2.;
+            match map.grid[row][column] {
                 Cell::Empty => {
                     // println!("LOADING CELL");
                     commands.spawn(SpriteBundle {
-                        transform: Transform::from_xyz(pos_x, pos_y, 0.),
+                        transform: Transform::from_xyz(x, y, 0.),
                         sprite: Sprite {
-                            color: Color::rgb(0.2, 0.3, 0.2),
+                            color: Color::GRAY,
                             custom_size: Some(Vec2::new(1., 1.)),
                             ..default()
                         },
