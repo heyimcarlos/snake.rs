@@ -52,6 +52,7 @@ fn load_map(
     mut map: ResMut<Map>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     camera_query: Query<&Camera>,
+    asset_server: Res<AssetServer>,
 ) {
     // println!("MAP LOADING; width: {}; height: {}", map.width, map.height);
     let Ok(window) = window_query.get_single() else {
@@ -79,6 +80,12 @@ fn load_map(
                             custom_size: Some(Vec2::new(1., 1.)),
                             ..default()
                         },
+                        ..default()
+                    });
+
+                    commands.spawn(SceneBundle {
+                        scene: asset_server.load("FloorTile.glb#Scene0"),
+                        transform: Transform::from_xyz(0., 0., 0.),
                         ..default()
                     });
                 }
