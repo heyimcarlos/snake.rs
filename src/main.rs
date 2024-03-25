@@ -1,12 +1,17 @@
+mod board;
+mod colors;
 mod map;
 
 use bevy::{prelude::*, render::color};
+use board::BoardPlugin;
 use map::MapPlugin;
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::rgb(0.52, 0.73, 0.17)))
         .add_plugins(DefaultPlugins)
-        .add_plugins(MapPlugin)
+        // .add_plugins(MapPlugin)
+        .add_plugins(BoardPlugin)
         .add_systems(Startup, setup)
         .add_systems(
             Update,
