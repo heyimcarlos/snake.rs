@@ -53,9 +53,7 @@ impl Velocity {
 //         Self { value }
 //     }
 // }
-
-fn spawn_snake(mut commands: Commands, board: Res<Board>) {
-    // snake (player)
+fn spawn_snake(mut commands: Commands, board: Res<Board>, asset_server: Res<AssetServer>) {
     commands.spawn((
         SpriteBundle {
             // the position of an entity
@@ -67,19 +65,33 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>) {
             ),
             sprite: Sprite {
                 color: Color::GRAY,
-                custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
+                custom_size: Some(Vec2::new(10., 10.)),
                 ..default()
             },
-            // texture: asset_server.load("./"),
             ..default()
         },
         Snake {
             // velocity: Velocity::new(Vec2::new(1., 0.)),
         },
     ));
+    // snake (player)
+    commands.spawn((
+        SceneBundle {
+            // the position of an entity
+            transform: Transform::from_xyz(
+                // @todo: randomize the spawn of the snake
+                board.position_translate(0),
+                board.position_translate(19),
+                10.0,
+            ),
+            scene: asset_server.load("Missile.glb#Scene0"),
+            ..default()
+        },
+        Snake,
+    ));
 }
 
-const SNAKE_SPEED: f32 = 5.0;
+const SNAKE_SPEED: f32 = 30.0;
 // @todo: The snake should always move at the same rate of speed.
 // what changes is its  direction, but the rate of movement is the same for the whole gameplay
 
@@ -92,21 +104,20 @@ fn snake_movement_controls(
     let Ok((mut transform)) = query.get_single_mut() else {
         return;
     };
-    let mut direction: f32 = 0.;
 
-    if keyboard_input.pressed(KeyCode::ArrowUp) {
-        direction += 1.;
+    // determine the direction of in which the snake head is pointing at;
+    // based on this direction rotate the head and keep moving forward
+    let direction: Vec3 = if keyboard_input.pressed(KeyCode::ArrowUp) {
+        Vec3::new(0.0, 1.0, 0.0)
     } else if keyboard_input.pressed(KeyCode::ArrowDown) {
-        direction -= 1.;
-    }
-
-    if keyboard_input.pressed(KeyCode::ArrowLeft) {
-        transform.translation.x += -SNAKE_SPEED * board.physical_size * time.delta_seconds();
+        Vec3::new(0.0, -1.0, 0.0)
+    } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
+        Vec3::new(-1.0, 0.0, 0.0)
     } else if keyboard_input.pressed(KeyCode::ArrowRight) {
-        transform.translation.x += SNAKE_SPEED * TILE_SIZE * time.delta_seconds();
-    }
+        Vec3::new(1.0, 0.0, 0.0)
+    } else {
+        Vec3::new(0.0, 0.0, 0.0)
+    };
 
-    let new_y =
-        transform.translation.y + direction * SNAKE_SPEED * TILE_SIZE * time.delta_seconds();
-    transform.translation.y = new_y;
+    transform.translation += direction * SNAKE_SPEED * time.delta_seconds();
 }
