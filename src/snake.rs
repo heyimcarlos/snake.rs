@@ -2,6 +2,8 @@ use bevy::prelude::*;
 
 use crate::board::{Board, TILE_SIZE};
 
+const SNAKE_SPEED: f32 = 30.0;
+
 #[derive(Component, Debug)]
 pub struct Snake;
 
@@ -53,10 +55,9 @@ impl Velocity {
 //         Self { value }
 //     }
 // }
-fn spawn_snake(mut commands: Commands, board: Res<Board>, asset_server: Res<AssetServer>) {
+fn spawn_snake(mut commands: Commands, board: Res<Board>) {
     commands.spawn((
         SpriteBundle {
-            // the position of an entity
             transform: Transform::from_xyz(
                 // @todo: randomize the spawn of the snake
                 board.position_translate(0),
@@ -70,30 +71,9 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, asset_server: Res<Asse
             },
             ..default()
         },
-        Snake {
-            // velocity: Velocity::new(Vec2::new(1., 0.)),
-        },
-    ));
-    // snake (player)
-    commands.spawn((
-        SceneBundle {
-            // the position of an entity
-            transform: Transform::from_xyz(
-                // @todo: randomize the spawn of the snake
-                board.position_translate(0),
-                board.position_translate(19),
-                10.0,
-            ),
-            scene: asset_server.load("Missile.glb#Scene0"),
-            ..default()
-        },
         Snake,
     ));
 }
-
-const SNAKE_SPEED: f32 = 30.0;
-// @todo: The snake should always move at the same rate of speed.
-// what changes is its  direction, but the rate of movement is the same for the whole gameplay
 
 fn snake_movement_controls(
     mut query: Query<(&mut Transform), With<Snake>>,
@@ -105,8 +85,6 @@ fn snake_movement_controls(
         return;
     };
 
-    // determine the direction of in which the snake head is pointing at;
-    // based on this direction rotate the head and keep moving forward
     let direction: Vec3 = if keyboard_input.pressed(KeyCode::ArrowUp) {
         Vec3::new(0.0, 1.0, 0.0)
     } else if keyboard_input.pressed(KeyCode::ArrowDown) {

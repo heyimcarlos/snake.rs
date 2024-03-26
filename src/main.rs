@@ -23,6 +23,5 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, _asset_server: Res<AssetServer>) {
-    // the default projection is 1000 far, -1000 near
     commands.spawn(Camera2dBundle::default());
 }
