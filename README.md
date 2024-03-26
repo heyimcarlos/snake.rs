@@ -1,4 +1,4 @@
-# Snake.rs
+# Snake.rs | Snake Game Written with Bevy
 
 ### What's snake?
 - The player (snake) moves in a 2d map (4 directions) in search of food (randomly spawned, one at a time)
