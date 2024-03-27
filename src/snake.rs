@@ -7,17 +7,40 @@ const SNAKE_SPEED: f32 = 30.0;
 #[derive(Component, Debug)]
 pub struct Snake;
 
+#[derive(Component, Debug)]
+pub struct SnakeDirection {
+    pub value: Direction,
+    pub next_value: Direction,
+}
+
+#[derive(Resource, Debug, Default)]
+pub struct MovementTimer {
+    timer: Timer,
+}
+
+impl Default for SnakeDirection {
+    fn default() -> Self {
+        SnakeDirection {
+            value: Direction::Up,
+            next_value: Direction::Up,
+        }
+    }
+}
+
 pub struct SnakePlugin;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PostStartup, spawn_snake)
-            .add_systems(Update, snake_movement_controls);
+        app.insert_resource(MovementTimer {
+            timer: Timer::from_seconds(0.4, TimerMode::Repeating),
+        })
+        .add_systems(PostStartup, spawn_snake)
+        .add_systems(Update, snake_movement_controls);
     }
 }
 
-#[derive(Debug, Default, Clone, Copy)]
-enum Direction {
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum Direction {
     #[default]
     Up,
     Down,
@@ -25,36 +48,6 @@ enum Direction {
     Right,
 }
 
-// @info: maybe I can create an enum with all 4 directions which are vec2 (1, 0) (0, 1) (-1, 0) (0, -1)
-
-// Speed and direction
-#[derive(Component, Debug)]
-pub struct Velocity {
-    pub value: Vec2,
-}
-
-impl Velocity {
-    fn new(value: Vec2) -> Self {
-        Self { value }
-    }
-
-    fn default() -> Self {
-        Self { value: Vec2::ZERO }
-    }
-}
-
-// describes the rate of change of velocity over time. It tells how quickly the velocity is
-// changing, not only in speed, but in direction.
-// #[derive(Component)]
-// struct Acceleration {
-//     value: Vec2,
-// }
-//
-// impl Acceleration {
-//     fn new(value: Vec2) -> Self {
-//         Self { value }
-//     }
-// }
 fn spawn_snake(mut commands: Commands, board: Res<Board>) {
     commands.spawn((
         SpriteBundle {
@@ -66,36 +59,56 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>) {
             ),
             sprite: Sprite {
                 color: Color::GRAY,
-                custom_size: Some(Vec2::new(10., 10.)),
+                custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                 ..default()
             },
             ..default()
         },
         Snake,
+        SnakeDirection::default(),
     ));
 }
 
 fn snake_movement_controls(
-    mut query: Query<(&mut Transform), With<Snake>>,
+    mut query: Query<(&mut Transform, &mut SnakeDirection), With<Snake>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     board: Res<Board>,
+    mut movement_timer: ResMut<MovementTimer>,
 ) {
-    let Ok((mut transform)) = query.get_single_mut() else {
+    let Ok((mut transform, mut direction)) = query.get_single_mut() else {
         return;
     };
+    dbg!(
+        transform.translation.x,
+        transform.translation.y,
+        direction.value,
+        direction.next_value
+    );
 
-    let direction: Vec3 = if keyboard_input.pressed(KeyCode::ArrowUp) {
-        Vec3::new(0.0, 1.0, 0.0)
-    } else if keyboard_input.pressed(KeyCode::ArrowDown) {
-        Vec3::new(0.0, -1.0, 0.0)
-    } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
-        Vec3::new(-1.0, 0.0, 0.0)
-    } else if keyboard_input.pressed(KeyCode::ArrowRight) {
-        Vec3::new(1.0, 0.0, 0.0)
-    } else {
-        Vec3::new(0.0, 0.0, 0.0)
-    };
+    if direction.value != direction.next_value {
+        direction.value = direction.next_value;
+    }
 
-    transform.translation += direction * SNAKE_SPEED * time.delta_seconds();
+    if keyboard_input.pressed(KeyCode::ArrowUp) && direction.value != Direction::Down {
+        direction.next_value = Direction::Up;
+    } else if keyboard_input.pressed(KeyCode::ArrowDown) && direction.value != Direction::Up {
+        direction.next_value = Direction::Down;
+    } else if keyboard_input.pressed(KeyCode::ArrowLeft) && direction.value != Direction::Right {
+        direction.next_value = Direction::Left;
+    } else if keyboard_input.pressed(KeyCode::ArrowRight) && direction.value != Direction::Left {
+        direction.next_value = Direction::Right;
+    }
+
+    if !movement_timer.timer.tick(time.delta()).just_finished() {
+        return;
+    }
+    dbg!(movement_timer.timer.elapsed_secs());
+
+    match direction.value {
+        Direction::Up => transform.translation.y += TILE_SIZE,
+        Direction::Down => transform.translation.y -= TILE_SIZE,
+        Direction::Left => transform.translation.x -= TILE_SIZE,
+        Direction::Right => transform.translation.x += TILE_SIZE,
+    }
 }
