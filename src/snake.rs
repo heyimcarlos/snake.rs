@@ -90,6 +90,7 @@ fn snake_movement_controls(
         direction.value = direction.next_value;
     }
 
+    // @info: this is a decent strategy. But what if we used positoin instead of direction?
     if keyboard_input.pressed(KeyCode::ArrowUp) && direction.value != Direction::Down {
         direction.next_value = Direction::Up;
     } else if keyboard_input.pressed(KeyCode::ArrowDown) && direction.value != Direction::Up {
