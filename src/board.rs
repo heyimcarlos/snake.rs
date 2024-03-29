@@ -37,41 +37,41 @@ pub struct BoardPlugin;
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Board::new(20))
-            .add_systems(Startup, (load_board, spawn_grid).chain());
+            .add_systems(Startup, load_board);
     }
 }
 
 fn load_board(mut commands: Commands, board: Res<Board>) {
-    commands.spawn(SpriteBundle {
-        sprite: Sprite {
-            color: COLORS.board,
-            custom_size: Some(Vec2::new(board.physical_size, board.physical_size)),
-            ..Default::default()
-        },
-        ..Default::default()
-    });
-}
-
-fn spawn_grid(mut commands: Commands, board: Res<Board>) {
-    for x in 0..board.size {
-        for y in 0..board.size {
-            commands.spawn(SpriteBundle {
-                sprite: Sprite {
-                    color: if (x + y) % 2 == 0 {
-                        COLORS.tile_placeholder
-                    } else {
-                        COLORS.tile_placeholder_dark
-                    },
-                    custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                    ..default()
-                },
-                transform: Transform::from_xyz(
-                    board.position_translate(x),
-                    board.position_translate(y),
-                    0.0,
-                ),
+    commands
+        .spawn(SpriteBundle {
+            sprite: Sprite {
+                color: COLORS.board,
+                custom_size: Some(Vec2::new(board.physical_size, board.physical_size)),
                 ..default()
-            });
-        }
-    }
+            },
+            ..default()
+        })
+        .with_children(|builder| {
+            for x in 0..board.size {
+                for y in 0..board.size {
+                    builder.spawn(SpriteBundle {
+                        sprite: Sprite {
+                            color: if (x + y) % 2 == 0 {
+                                COLORS.tile_placeholder
+                            } else {
+                                COLORS.tile_placeholder_dark
+                            },
+                            custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
+                            ..default()
+                        },
+                        transform: Transform::from_xyz(
+                            board.position_translate(x),
+                            board.position_translate(y),
+                            0.0,
+                        ),
+                        ..default()
+                    });
+                }
+            }
+        });
 }
