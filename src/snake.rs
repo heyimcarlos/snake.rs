@@ -2,6 +2,7 @@ use bevy::{prelude::*, utils::dbg};
 
 use crate::{
     board::{Board, TILE_SIZE},
+    schedule::InGameSet,
     util::snake_starting_position,
 };
 
@@ -24,14 +25,14 @@ pub struct SnakeHead;
 #[derive(Component, Debug)]
 pub struct SnakeSegment;
 
-#[derive(Debug, Component, Clone, Copy)]
+#[derive(Debug, Component, Clone, Copy, PartialEq, Eq)]
 pub struct Position {
     pub x: u8,
     pub y: u8,
 }
 
 impl Position {
-    fn new(x: u8, y: u8) -> Self {
+    pub fn new(x: u8, y: u8) -> Self {
         Self { x, y }
     }
 }
@@ -54,11 +55,15 @@ pub struct SnakePlugin;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(MovementTimer {
-            timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-        })
-        .add_systems(PostStartup, spawn_snake)
-        .add_systems(Update, (snake_movement_controls, snake_position_update));
+        app.add_systems(PostStartup, spawn_snake)
+            .insert_resource(MovementTimer {
+                timer: Timer::from_seconds(0.15, TimerMode::Repeating),
+            })
+            .add_systems(Update, snake_movement_controls.in_set(InGameSet::UserInput))
+            .add_systems(
+                Update,
+                snake_position_update.in_set(InGameSet::EntityUpdates),
+            );
     }
 }
 
@@ -150,9 +155,6 @@ fn snake_movement_controls(
         snake_direction.value
     };
 
-    // store previous head position, before updating it;
-    let mut prev_pos = head_pos.clone();
-
     // update head position based on direction
     snake_direction.value = new_direction;
 
@@ -160,6 +162,9 @@ fn snake_movement_controls(
     if !movement_timer.timer.just_finished() {
         return;
     }
+
+    // store previous head position, before updating it;
+    let mut prev_pos = head_pos.clone();
 
     match snake_direction.value {
         Direction::Up => head_pos.y += 1,
