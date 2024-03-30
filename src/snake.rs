@@ -1,28 +1,32 @@
-use bevy::{prelude::*, utils::tracing::Instrument};
+use bevy::prelude::*;
 
-use crate::board::{Board, TILE_SIZE};
+use crate::{
+    board::{Board, TILE_SIZE},
+    util::snake_starting_position,
+};
 
 const SNAKE_SPEED: f32 = 30.0;
 
-#[derive(Resource, Debug)]
-pub struct SnakeBody {
-    pub segments: Vec<Position>,
-}
+// #[derive(Component, Debug)]
+// pub struct SnakeDirection {
+//     pub value: Direction,
+//     pub next_value: Direction,
+// }
 
-impl Default for SnakeBody {
-    fn default() -> Self {
-        Self {
-            segments: Vec::from([
-                Position { x: 3, y: 1 },
-                Position { x: 2, y: 1 },
-                Position { x: 1, y: 1 },
-            ]),
-        }
-    }
-}
+// impl Default for SnakeDirection {
+//     fn default() -> Self {
+//         SnakeDirection {
+//             value: Direction::Right,
+//             next_value: Direction::Right,
+//         }
+//     }
+// }
 
 #[derive(Component, Debug)]
-pub struct Snake;
+pub struct SnakeHead;
+
+#[derive(Component, Debug)]
+pub struct SnakeSegment;
 
 #[derive(Debug, Component, Clone, Copy)]
 pub struct Position {
@@ -30,24 +34,15 @@ pub struct Position {
     pub y: u8,
 }
 
-#[derive(Component, Debug)]
-pub struct SnakeDirection {
-    pub value: Direction,
-    pub next_value: Direction,
+impl Position {
+    fn new(x: u8, y: u8) -> Self {
+        Self { x, y }
+    }
 }
 
 #[derive(Resource, Debug, Default)]
 pub struct MovementTimer {
     timer: Timer,
-}
-
-impl Default for SnakeDirection {
-    fn default() -> Self {
-        SnakeDirection {
-            value: Direction::Right,
-            next_value: Direction::Right,
-        }
-    }
 }
 
 pub struct SnakePlugin;
@@ -57,7 +52,6 @@ impl Plugin for SnakePlugin {
         app.insert_resource(MovementTimer {
             timer: Timer::from_seconds(2., TimerMode::Repeating),
         })
-        .init_resource::<SnakeBody>()
         .add_systems(PostStartup, spawn_snake)
         .add_systems(Update, snake_movement_controls);
     }
@@ -72,15 +66,15 @@ pub enum Direction {
     Right,
 }
 
-fn spawn_snake(mut commands: Commands, board: Res<Board>, snake: Res<SnakeBody>) {
-    // get snake head
-    let head = snake.segments.first().unwrap();
+fn spawn_snake(mut commands: Commands, board: Res<Board>) {
+    let start_pos = snake_starting_position(board.size);
+
+    // load snake head
     commands.spawn((
         SpriteBundle {
             transform: Transform::from_xyz(
-                // @todo: randomize the spawn of the snake
-                board.position_translate(head.x.into()),
-                board.position_translate(head.y.into()),
+                board.position_translate(start_pos[0].x.into()),
+                board.position_translate(start_pos[0].y.into()),
                 10.0,
             ),
             sprite: Sprite {
@@ -90,16 +84,16 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, snake: Res<SnakeBody>)
             },
             ..default()
         },
-        Snake,
-        SnakeDirection::default(),
+        SnakeHead,
+        SnakeSegment,
+        Position::from(start_pos[0]),
     ));
 
-    let tail = &snake.segments[1..];
-    for segment in tail {
+    // load snake tail
+    start_pos[1..].iter().for_each(|segment| {
         commands.spawn((
             SpriteBundle {
                 transform: Transform::from_xyz(
-                    // @todo: randomize the spawn of the snake
                     board.position_translate(segment.x.into()),
                     board.position_translate(segment.y.into()),
                     10.0,
@@ -111,25 +105,26 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, snake: Res<SnakeBody>)
                 },
                 ..default()
             },
-            Snake,
+            SnakeSegment,
+            Position::new(segment.x, segment.y),
         ));
-    }
+    });
 }
 
 fn snake_movement_controls(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     board: Res<Board>,
-    mut snake: ResMut<SnakeBody>,
-    snake_direction_query: Query<&SnakeDirection, With<Snake>>,
+    // mut snake: ResMut<SnakeBody>,
+    // snake_direction_query: Query<&SnakeDirection, With<Snake>>,
     mut movement_timer: ResMut<MovementTimer>,
 ) {
     // for (mut transform, direction) in query.iter_mut() {
     //     println!("Snake position: {:?}", transform.translation);
     // }
-    let Ok(snake_direction) = snake_direction_query.get_single() else {
-        return;
-    };
+    // let Ok(snake_direction) = snake_direction_query.get_single() else {
+    //     return;
+    // };
     // println!("Snake's head direction: {:?}", snake_direction);
 
     // if snake_direction.value != snake_direction.next_value {
@@ -150,33 +145,33 @@ fn snake_movement_controls(
     //     snake_direction.next_value = Direction::Right;
     // }
 
-    if !movement_timer.timer.tick(time.delta()).just_finished() {
-        return;
-    }
-
-    let head = snake.segments.first().clone().unwrap();
-    let new_head = match snake_direction.value {
-        Direction::Up => Position {
-            x: head.x,
-            y: head.y + 1,
-        },
-        Direction::Down => Position {
-            x: head.x,
-            y: head.y - 1,
-        },
-        Direction::Left => Position {
-            x: head.x - 1,
-            y: head.y,
-        },
-        Direction::Right => Position {
-            x: head.x + 1,
-            y: head.y,
-        },
-    };
-
-    snake.segments.insert(0, new_head);
-    snake.segments.pop();
-    println!("Snake segments: {:?}", snake.segments);
+    // if !movement_timer.timer.tick(time.delta()).just_finished() {
+    //     return;
+    // }
+    //
+    // let head = snake.segments.first().clone().unwrap();
+    // let new_head = match snake_direction.value {
+    //     Direction::Up => Position {
+    //         x: head.x,
+    //         y: head.y + 1,
+    //     },
+    //     Direction::Down => Position {
+    //         x: head.x,
+    //         y: head.y - 1,
+    //     },
+    //     Direction::Left => Position {
+    //         x: head.x - 1,
+    //         y: head.y,
+    //     },
+    //     Direction::Right => Position {
+    //         x: head.x + 1,
+    //         y: head.y,
+    //     },
+    // };
+    //
+    // snake.segments.insert(0, new_head);
+    // snake.segments.pop();
+    // println!("Snake segments: {:?}", snake.segments);
 
     // @info: we have to create a new snake segnment and spawn it as the new head. then we have to
     // remove the last segment of the snake. This is how we simulate the snake moving.
