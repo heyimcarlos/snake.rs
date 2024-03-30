@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
+    asset_loader::SceneAssets,
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     util::snake_starting_position,
@@ -67,20 +68,21 @@ impl Plugin for SnakePlugin {
     }
 }
 
-fn spawn_snake(mut commands: Commands, board: Res<Board>) {
+fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<SceneAssets>) {
     let start_pos = snake_starting_position(board.size);
 
     // load snake head
     commands.spawn((
-        SpriteBundle {
+        SpriteSheetBundle {
             transform: Transform::from_xyz(
                 board.position_translate(start_pos[0].x.into()),
                 board.position_translate(start_pos[0].y.into()),
-                10.0,
+                2.0,
             ),
+            texture: assets.snake_head.clone(),
             sprite: Sprite {
-                color: Color::BLUE,
-                custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
+                // color: Color::BLUE,
+                custom_size: Some(Vec2::new(TILE_SIZE - 3., TILE_SIZE - 3.)),
                 ..default()
             },
             ..default()
@@ -100,9 +102,10 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>) {
                     board.position_translate(segment.y.into()),
                     10.0,
                 ),
+                texture: assets.snake.clone(),
                 sprite: Sprite {
-                    color: Color::GRAY,
-                    custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
+                    // color: Color::BLUE,
+                    custom_size: Some(Vec2::new(TILE_SIZE - 3., TILE_SIZE - 3.)),
                     ..default()
                 },
                 ..default()

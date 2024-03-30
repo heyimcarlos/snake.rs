@@ -1,3 +1,4 @@
+mod asset_loader;
 mod board;
 mod collision_detection;
 mod colors;
@@ -8,6 +9,7 @@ mod snake;
 mod state;
 mod util;
 
+use asset_loader::AssetLoaderPlugin;
 use bevy::prelude::*;
 use board::BoardPlugin;
 use collision_detection::CollisionDetectionPlugin;
@@ -26,6 +28,7 @@ fn main() {
             color: Color::default(),
             brightness: 1000.0,
         })
+        .add_plugins(AssetLoaderPlugin)
         .add_systems(Startup, setup)
         .add_plugins(BoardPlugin)
         .add_plugins(FoodPlugin)
