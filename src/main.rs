@@ -7,6 +7,7 @@ mod util;
 
 use bevy::prelude::*;
 use board::BoardPlugin;
+use food::FoodPlugin;
 use snake::SnakePlugin;
 
 fn main() {
@@ -20,6 +21,7 @@ fn main() {
         })
         .add_plugins(BoardPlugin)
         .add_plugins(SnakePlugin)
+        .add_plugins(FoodPlugin)
         .add_systems(Startup, setup)
         .run();
 }
