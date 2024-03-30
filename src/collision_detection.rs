@@ -19,13 +19,12 @@ impl Plugin for CollisionDetectionPlugin {
 }
 
 fn collision_detection(
-    // mut commands: Commands,
     snake_head_query: Query<&Position, With<SnakeHead>>,
     snake_body_query: Query<&Position, (With<SnakeSegment>, Without<SnakeHead>)>,
     board: Res<Board>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    let Ok((head_pos)) = snake_head_query.get_single() else {
+    let Ok(head_pos) = snake_head_query.get_single() else {
         return;
     };
 
