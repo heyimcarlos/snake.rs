@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{
-    board::{Board, TILE_SIZE},
-    snake::Snake,
-};
+use crate::board::{Board, TILE_SIZE};
 
 pub struct MovementPlugin;
 

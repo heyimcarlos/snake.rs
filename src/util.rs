@@ -13,12 +13,12 @@ pub fn snake_starting_position(board_size: usize) -> Vec<Position> {
             y: start_y as u8,
         },
         Position {
-            x: start_x as u8,
-            y: start_y as u8 - 1,
+            x: start_x as u8 - 1,
+            y: start_y as u8,
         },
         Position {
-            x: start_x as u8,
-            y: start_y as u8 - 2,
+            x: start_x as u8 - 2,
+            y: start_y as u8,
         },
     ]
 }
