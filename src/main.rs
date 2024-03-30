@@ -3,6 +3,7 @@ mod colors;
 mod map;
 mod movement;
 mod snake;
+mod util;
 
 use bevy::prelude::*;
 use board::BoardPlugin;
