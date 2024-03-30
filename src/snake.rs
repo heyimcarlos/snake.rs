@@ -55,19 +55,15 @@ pub struct SnakePlugin;
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(MovementTimer {
-            timer: Timer::from_seconds(0.2, TimerMode::Repeating),
+            timer: Timer::from_seconds(0.1, TimerMode::Repeating),
         })
         .add_systems(PostStartup, spawn_snake)
-        .add_systems(
-            Update,
-            (snake_movement_controls, snake_position_update).chain(),
-        );
+        .add_systems(Update, (snake_movement_controls, snake_position_update));
     }
 }
 
 fn spawn_snake(mut commands: Commands, board: Res<Board>) {
     let start_pos = snake_starting_position(board.size);
-    println!("start pos: {:?}", start_pos);
 
     // load snake head
     commands.spawn((
@@ -78,7 +74,7 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>) {
                 10.0,
             ),
             sprite: Sprite {
-                color: Color::RED,
+                color: Color::BLUE,
                 custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                 ..default()
             },
@@ -136,13 +132,19 @@ fn snake_movement_controls(
         return;
     };
 
-    let new_direction = if keyboard_input.pressed(KeyCode::ArrowUp) {
+    let new_direction = if keyboard_input.pressed(KeyCode::ArrowUp)
+        && snake_direction.value != Direction::Down
+    {
         Direction::Up
-    } else if keyboard_input.pressed(KeyCode::ArrowDown) {
+    } else if keyboard_input.pressed(KeyCode::ArrowDown) && snake_direction.value != Direction::Up {
         Direction::Down
-    } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
+    } else if keyboard_input.pressed(KeyCode::ArrowLeft)
+        && snake_direction.value != Direction::Right
+    {
         Direction::Left
-    } else if keyboard_input.pressed(KeyCode::ArrowRight) {
+    } else if keyboard_input.pressed(KeyCode::ArrowRight)
+        && snake_direction.value != Direction::Left
+    {
         Direction::Right
     } else {
         snake_direction.value

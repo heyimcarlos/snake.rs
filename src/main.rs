@@ -1,13 +1,12 @@
 mod board;
 mod colors;
+mod food;
 mod map;
-mod movement;
 mod snake;
 mod util;
 
 use bevy::prelude::*;
 use board::BoardPlugin;
-use movement::MovementPlugin;
 use snake::SnakePlugin;
 
 fn main() {
@@ -21,7 +20,6 @@ fn main() {
         })
         .add_plugins(BoardPlugin)
         .add_plugins(SnakePlugin)
-        .add_plugins(MovementPlugin)
         .add_systems(Startup, setup)
         .run();
 }
