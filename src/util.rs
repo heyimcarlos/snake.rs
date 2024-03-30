@@ -22,3 +22,11 @@ pub fn snake_starting_position(board_size: usize) -> Vec<Position> {
         },
     ]
 }
+
+pub fn food_position(board_size: usize) -> Position {
+    let mut rng = rand::thread_rng();
+    Position {
+        x: rng.gen_range(5..board_size - 5) as u8,
+        y: rng.gen_range(5..board_size - 5) as u8,
+    }
+}

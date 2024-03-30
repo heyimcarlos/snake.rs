@@ -1,9 +1,13 @@
 use bevy::prelude::*;
 
-use crate::board::{Board, TILE_SIZE};
+use crate::{
+    board::{Board, TILE_SIZE},
+    snake::Position,
+    util::food_position,
+};
 
 #[derive(Component, Debug)]
-struct Food;
+pub struct Food;
 
 pub struct FoodPlugin;
 
@@ -13,18 +17,23 @@ impl Plugin for FoodPlugin {
     }
 }
 
-fn spawn_food(mut commands: Commands, board: Res<Board>) {
-    commands.spawn(SpriteBundle {
-        transform: Transform::from_xyz(
-            board.position_translate(15),
-            board.position_translate(15),
-            1.0,
-        ),
-        sprite: Sprite {
-            color: Color::RED,
-            custom_size: Some(Vec2::new(TILE_SIZE - 2., TILE_SIZE - 2.)),
-            ..default()
+pub fn spawn_food(mut commands: Commands, board: Res<Board>) {
+    let food_pos = food_position(board.size);
+    commands.spawn((
+        SpriteBundle {
+            transform: Transform::from_xyz(
+                board.position_translate(food_pos.x.into()),
+                board.position_translate(food_pos.x.into()),
+                1.0,
+            ),
+            sprite: Sprite {
+                color: Color::RED,
+                custom_size: Some(Vec2::new(TILE_SIZE - 2., TILE_SIZE - 2.)),
+                ..default()
+            },
+            ..Default::default()
         },
-        ..Default::default()
-    });
+        Food,
+        Position::from(food_pos),
+    ));
 }
