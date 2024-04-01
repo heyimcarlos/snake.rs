@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    asset_loader::SceneAssets,
+    asset_loader::ImageAssets,
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     state::GameState,
@@ -69,25 +69,30 @@ impl Plugin for SnakePlugin {
     }
 }
 
-fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<SceneAssets>) {
+fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAssets>) {
     let start_pos = snake_starting_position(board.size);
+    let texture_atlas = TextureAtlas {
+        layout: assets.sprite_sheet_layout.clone(),
+        index: 10,
+    };
 
     // load snake head
     commands.spawn((
-        SpriteSheetBundle {
+        SpriteBundle {
             transform: Transform::from_xyz(
                 board.position_translate(start_pos[0].x.into()),
                 board.position_translate(start_pos[0].y.into()),
                 2.0,
             ),
-            texture: assets.snake_head.clone(),
+            texture: assets.sprite_sheet.clone(),
             sprite: Sprite {
                 // color: Color::BLUE,
                 custom_size: Some(Vec2::new(TILE_SIZE - 3., TILE_SIZE - 3.)),
-                ..default()
+                ..Default::default()
             },
             ..default()
         },
+        TextureAtlas::from(texture_atlas),
         SnakeHead,
         SnakeSegment,
         Position::from(start_pos[0]),
@@ -95,26 +100,26 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<SceneAsset
     ));
 
     // load snake tail
-    start_pos[1..].iter().for_each(|segment| {
-        commands.spawn((
-            SpriteBundle {
-                transform: Transform::from_xyz(
-                    board.position_translate(segment.x.into()),
-                    board.position_translate(segment.y.into()),
-                    10.0,
-                ),
-                texture: assets.snake.clone(),
-                sprite: Sprite {
-                    // color: Color::BLUE,
-                    custom_size: Some(Vec2::new(TILE_SIZE - 3., TILE_SIZE - 3.)),
-                    ..default()
-                },
-                ..default()
-            },
-            SnakeSegment,
-            Position::new(segment.x, segment.y),
-        ));
-    });
+    // start_pos[1..].iter().for_each(|segment| {
+    //     commands.spawn((
+    //         SpriteBundle {
+    //             transform: Transform::from_xyz(
+    //                 board.position_translate(segment.x.into()),
+    //                 board.position_translate(segment.y.into()),
+    //                 10.0,
+    //             ),
+    //             texture: assets.snake.clone(),
+    //             sprite: Sprite {
+    //                 // color: Color::BLUE,
+    //                 custom_size: Some(Vec2::new(TILE_SIZE - 3., TILE_SIZE - 3.)),
+    //                 ..default()
+    //             },
+    //             ..default()
+    //         },
+    //         SnakeSegment,
+    //         Position::new(segment.x, segment.y),
+    //     ));
+    // });
 }
 
 fn snake_position_update(
