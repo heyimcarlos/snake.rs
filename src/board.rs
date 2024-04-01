@@ -3,7 +3,6 @@ use bevy::prelude::*;
 use crate::colors::COLORS;
 
 pub const TILE_SIZE: f32 = 30.0;
-// const TILE_SPACER: f32 = 0.0;
 
 // should the board be a resource or a component?
 #[derive(Resource, Debug)]
