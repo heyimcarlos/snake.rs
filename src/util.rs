@@ -32,3 +32,7 @@ pub fn food_position(board_size: i32) -> Position {
         y: rng.gen_range(5..board_size - 5),
     }
 }
+
+pub fn get_sprite_index(row: usize, column: usize, columns_per_row: usize) -> usize {
+    row * columns_per_row + column
+}

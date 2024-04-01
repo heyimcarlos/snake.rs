@@ -5,7 +5,7 @@ use crate::{
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     state::GameState,
-    util::snake_starting_position,
+    util::{get_sprite_index, snake_starting_position},
 };
 
 #[derive(Component, Debug)]
@@ -71,9 +71,9 @@ impl Plugin for SnakePlugin {
 
 fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAssets>) {
     let start_pos = snake_starting_position(board.size);
-    let texture_atlas = TextureAtlas {
+    let head_texture = TextureAtlas {
         layout: assets.sprite_sheet_layout.clone(),
-        index: 10,
+        index: get_sprite_index(0, 4, 5),
     };
 
     // load snake head
@@ -99,27 +99,28 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAsset
         SnakeDirection::default(),
     ));
 
+            TextureAtlas::from(texture_atlas).index,
     // load snake tail
-    // start_pos[1..].iter().for_each(|segment| {
-    //     commands.spawn((
-    //         SpriteBundle {
-    //             transform: Transform::from_xyz(
-    //                 board.position_translate(segment.x.into()),
-    //                 board.position_translate(segment.y.into()),
-    //                 10.0,
-    //             ),
-    //             texture: assets.snake.clone(),
-    //             sprite: Sprite {
-    //                 // color: Color::BLUE,
-    //                 custom_size: Some(Vec2::new(TILE_SIZE - 3., TILE_SIZE - 3.)),
-    //                 ..default()
-    //             },
-    //             ..default()
-    //         },
-    //         SnakeSegment,
-    //         Position::new(segment.x, segment.y),
-    //     ));
-    // });
+    start_pos[1..].iter().for_each(|segment| {
+        commands.spawn((
+            SpriteBundle {
+                transform: Transform::from_xyz(
+                    board.position_translate(segment.x.into()),
+                    board.position_translate(segment.y.into()),
+                    10.0,
+                ),
+                texture: assets.sprite_sheet.clone(),
+                sprite: Sprite {
+                    // color: Color::BLUE,
+                    custom_size: Some(Vec2::new(TILE_SIZE - 3., TILE_SIZE - 3.)),
+                    ..default()
+                },
+                ..default()
+            },
+            SnakeSegment,
+            Position::new(segment.x, segment.y),
+        ));
+    });
 }
 
 fn snake_position_update(

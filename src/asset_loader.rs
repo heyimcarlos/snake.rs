@@ -5,14 +5,7 @@ use bevy_asset_loader::prelude::*;
 pub struct ImageAssets {
     #[asset(path = "snake-graphics.png")]
     pub sprite_sheet: Handle<Image>,
-    #[asset(texture_atlas(
-        tile_size_x = 136.,
-        tile_size_y = 136.,
-        columns = 5,
-        rows = 4,
-        padding_x = 0.,
-        padding_y = 0.
-    ))]
+    #[asset(texture_atlas_layout(tile_size_x = 64., tile_size_y = 64., columns = 5, rows = 4,))]
     pub sprite_sheet_layout: Handle<TextureAtlasLayout>,
 }
 
