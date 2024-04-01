@@ -4,6 +4,7 @@ use crate::{
     asset_loader::SceneAssets,
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
+    state::GameState,
     util::snake_starting_position,
 };
 
@@ -56,7 +57,7 @@ pub struct SnakePlugin;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PostStartup, spawn_snake)
+        app.add_systems(OnEnter(GameState::BeforeGame), spawn_snake)
             .insert_resource(MovementTimer {
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
             })
@@ -136,6 +137,11 @@ fn snake_movement_controls(
     mut snake_head_query: Query<(&mut SnakeDirection, &mut Position), With<SnakeHead>>,
     mut snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
 ) {
+    movement_timer.timer.tick(time.delta());
+    if !movement_timer.timer.just_finished() {
+        return;
+    }
+
     let Ok((mut snake_direction, mut head_pos)) = snake_head_query.get_single_mut() else {
         return;
     };
@@ -158,13 +164,11 @@ fn snake_movement_controls(
         snake_direction.value
     };
 
+    // @todo: right now if the user quickly presses a new direction and immediatedly presses the
+    // direction in which the snake is moving, the direction that's pressed first will be ignored.
+
     // update head position based on direction
     snake_direction.value = new_direction;
-
-    movement_timer.timer.tick(time.delta());
-    if !movement_timer.timer.just_finished() {
-        return;
-    }
 
     // store previous head position, before updating it;
     let mut prev_pos = head_pos.clone();
