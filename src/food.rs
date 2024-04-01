@@ -38,7 +38,6 @@ impl FoodEvent {
 }
 
 pub fn spawn_food(mut commands: Commands, board: Res<Board>) {
-    println!("spawn_food");
     let food_pos = Position::new(board.size / 2 + 5, board.size / 2);
     commands.spawn((
         SpriteBundle {
@@ -83,12 +82,11 @@ fn apply_eat_food(
     snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
     board: Res<Board>,
 ) {
-    // println!("apply_eat_food");
     for &FoodEvent { entity } in food_event_reader.read() {
         // food eaten, despawn food
         commands.entity(entity).despawn();
 
-        // @todo: implement a eat_food_event that spawns new food and enlarges the snake.
+        // @todo: create an enlarge snake event, move that logic outside of this system
         let Some((tail_pos, _)) = snake_body_query.iter().last() else {
             return;
         };
