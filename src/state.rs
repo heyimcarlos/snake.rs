@@ -2,8 +2,9 @@ use bevy::prelude::*;
 
 #[derive(Debug, States, Clone, PartialEq, Eq, Hash, Copy, Default)]
 pub enum GameState {
-    #[default]
     InGame,
+    #[default]
+    BeforeGame,
     Paused,
     GameOver,
 }
@@ -31,6 +32,25 @@ fn game_state_input_events(
         match state.get() {
             GameState::InGame => next_state.set(GameState::Paused),
             GameState::Paused => next_state.set(GameState::InGame),
+            _ => (),
+        }
+    }
+
+    if keyboard_input.just_pressed(KeyCode::KeyR) {
+        match state.get() {
+            GameState::GameOver => next_state.set(GameState::BeforeGame),
+            _ => (),
+        }
+    }
+
+    if keyboard_input.any_just_pressed([
+        KeyCode::ArrowUp,
+        KeyCode::ArrowDown,
+        KeyCode::ArrowLeft,
+        KeyCode::ArrowRight,
+    ]) {
+        match state.get() {
+            GameState::BeforeGame => next_state.set(GameState::InGame),
             _ => (),
         }
     }

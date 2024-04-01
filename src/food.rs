@@ -4,6 +4,7 @@ use crate::{
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     snake::{Position, SnakeHead, SnakeSegment},
+    state::GameState,
     util::food_position,
 };
 
@@ -14,7 +15,7 @@ pub struct FoodPlugin;
 
 impl Plugin for FoodPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_food)
+        app.add_systems(OnEnter(GameState::BeforeGame), spawn_food)
             .add_systems(
                 Update,
                 (handle_eat_food, apply_eat_food)
@@ -37,12 +38,13 @@ impl FoodEvent {
 }
 
 pub fn spawn_food(mut commands: Commands, board: Res<Board>) {
-    let food_pos = food_position(board.size);
+    println!("spawn_food");
+    let food_pos = Position::new(board.size / 2 + 5, board.size / 2);
     commands.spawn((
         SpriteBundle {
             transform: Transform::from_xyz(
-                board.position_translate(food_pos.x.into()),
-                board.position_translate(food_pos.x.into()),
+                board.position_translate(food_pos.x),
+                board.position_translate(food_pos.y),
                 1.0,
             ),
             sprite: Sprite {
@@ -81,6 +83,7 @@ fn apply_eat_food(
     snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
     board: Res<Board>,
 ) {
+    // println!("apply_eat_food");
     for &FoodEvent { entity } in food_event_reader.read() {
         // food eaten, despawn food
         commands.entity(entity).despawn();
@@ -111,8 +114,8 @@ fn apply_eat_food(
         commands.spawn((
             SpriteBundle {
                 transform: Transform::from_xyz(
-                    board.position_translate(food_pos.x.into()),
-                    board.position_translate(food_pos.x.into()),
+                    board.position_translate(food_pos.x),
+                    board.position_translate(food_pos.y),
                     1.0,
                 ),
                 sprite: Sprite {

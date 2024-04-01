@@ -1,11 +1,13 @@
-use rand::{self, Rng};
+use rand::Rng;
 
 use crate::snake::Position;
 
 pub fn snake_starting_position(board_size: i32) -> Vec<Position> {
-    let mut rng = rand::thread_rng();
-    let start_x = rng.gen_range(5..board_size - 5);
-    let start_y = rng.gen_range(5..board_size - 5);
+    // let mut rng = rand::thread_rng();
+    // let start_x = rng.gen_range(5..board_size - 5);
+    // let start_y = rng.gen_range(5..board_size - 5);
+    let start_x = board_size / 2 - 5;
+    let start_y = board_size / 2;
 
     vec![
         Position {
