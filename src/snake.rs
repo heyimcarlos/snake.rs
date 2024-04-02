@@ -11,12 +11,14 @@ use crate::{
 #[derive(Component, Debug)]
 pub struct SnakeDirection {
     value: Direction,
+    next_value: Direction,
 }
 
 impl Default for SnakeDirection {
     fn default() -> Self {
         SnakeDirection {
-            value: Direction::Right,
+            value: Direction::default(),
+            next_value: Direction::default(),
         }
     }
 }
@@ -46,10 +48,10 @@ pub struct MovementTimer {
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
-    #[default]
     Up,
     Down,
     Left,
+    #[default]
     Right,
 }
 
@@ -92,14 +94,14 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAsset
             },
             ..default()
         },
-        TextureAtlas::from(texture_atlas),
+        TextureAtlas::from(head_texture),
         SnakeHead,
         SnakeSegment,
         Position::from(start_pos[0]),
         SnakeDirection::default(),
     ));
 
-            TextureAtlas::from(texture_atlas).index,
+    // TextureAtlas::from(texture_atlas).index,
     // load snake tail
     start_pos[1..].iter().for_each(|segment| {
         commands.spawn((
@@ -136,6 +138,7 @@ fn snake_position_update(
     }
 }
 
+// @todo: do I rename this to update direction?
 fn snake_movement_controls(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
@@ -143,15 +146,12 @@ fn snake_movement_controls(
     mut snake_head_query: Query<(&mut SnakeDirection, &mut Position), With<SnakeHead>>,
     mut snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
 ) {
-    movement_timer.timer.tick(time.delta());
-    if !movement_timer.timer.just_finished() {
-        return;
-    }
-
     let Ok((mut snake_direction, mut head_pos)) = snake_head_query.get_single_mut() else {
         return;
     };
 
+    // so now we have a next direction value, this value will be useful if we want to conditionally
+    // check it.
     let new_direction = if keyboard_input.pressed(KeyCode::ArrowUp)
         && snake_direction.value != Direction::Down
     {
@@ -170,15 +170,57 @@ fn snake_movement_controls(
         snake_direction.value
     };
 
+    snake_direction.next_value = match snake_direction.next_value {
+        Direction::Up => {}
+        Direction::Down => {}
+        Direction::Right => {}
+        Direction::Left => {}
+    };
+
     // @todo: right now if the user quickly presses a new direction and immediatedly presses the
     // direction in which the snake is moving, the direction that's pressed first will be ignored.
 
     // update head position based on direction
     snake_direction.value = new_direction;
 
+    // movement_timer.timer.tick(time.delta());
+    // if !movement_timer.timer.just_finished() {
+    //     return;
+    // }
+
     // store previous head position, before updating it;
     let mut prev_pos = head_pos.clone();
 
+    // @todo: have the applying of the new direction on its own system, it should also hold the
+    // time delay.
+    // @todo: have a next direction value and match that to check two inputs don't make he snake
+    // die.
+    // match snake_direction.value {
+    //     Direction::Up => head_pos.y += 1,
+    //     Direction::Down => head_pos.y -= 1,
+    //     Direction::Left => head_pos.x -= 1,
+    //     Direction::Right => head_pos.x += 1,
+    // }
+    //
+    // for (mut segment_pos, _) in snake_body_query.iter_mut() {
+    //     let temp = *segment_pos;
+    //     *segment_pos = prev_pos;
+    //     prev_pos = temp;
+    // }
+}
+
+// @todo: thsi actually effectuates the changes one the positioning of the snake.
+// so name it update_position?
+fn new_system(mut movement_timer: ResMut<MovementTimer>, time: Res<Time>) {
+    movement_timer.timer.tick(time.delta());
+    if !movement_timer.timer.just_finished() {
+        return;
+    }
+
+    // @todo: have the applying of the new direction on its own system, it should also hold the
+    // time delay.
+    // @todo: have a next direction value and match that to check two inputs don't make he snake
+    // die.
     match snake_direction.value {
         Direction::Up => head_pos.y += 1,
         Direction::Down => head_pos.y -= 1,
