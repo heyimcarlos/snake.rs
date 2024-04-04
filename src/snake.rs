@@ -10,15 +10,15 @@ use crate::{
 
 #[derive(Component, Debug)]
 pub struct SnakeDirection {
-    value: Direction,
-    next_value: Direction,
+    current: Direction,
+    next: Option<Direction>,
 }
 
 impl Default for SnakeDirection {
     fn default() -> Self {
         SnakeDirection {
-            value: Direction::default(),
-            next_value: Direction::default(),
+            current: Direction::default(),
+            next: None,
         }
     }
 }
@@ -55,6 +55,17 @@ pub enum Direction {
     Right,
 }
 
+impl Direction {
+    fn opposite(&self) -> Self {
+        match self {
+            Self::Up => Self::Down,
+            Self::Down => Self::Up,
+            Self::Left => Self::Right,
+            Self::Right => Self::Left,
+        }
+    }
+}
+
 pub struct SnakePlugin;
 
 impl Plugin for SnakePlugin {
@@ -63,10 +74,12 @@ impl Plugin for SnakePlugin {
             .insert_resource(MovementTimer {
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
             })
-            .add_systems(Update, snake_movement_controls.in_set(InGameSet::UserInput))
+            .add_systems(Update, movement_controls.in_set(InGameSet::UserInput))
             .add_systems(
                 Update,
-                snake_position_update.in_set(InGameSet::EntityUpdates),
+                (update_position, update_board_position)
+                    .chain()
+                    .in_set(InGameSet::EntityUpdates),
             );
     }
 }
@@ -88,8 +101,7 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAsset
             ),
             texture: assets.sprite_sheet.clone(),
             sprite: Sprite {
-                // color: Color::BLUE,
-                custom_size: Some(Vec2::new(TILE_SIZE - 3., TILE_SIZE - 3.)),
+                custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                 ..Default::default()
             },
             ..default()
@@ -113,120 +125,95 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAsset
                 ),
                 texture: assets.sprite_sheet.clone(),
                 sprite: Sprite {
-                    // color: Color::BLUE,
-                    custom_size: Some(Vec2::new(TILE_SIZE - 3., TILE_SIZE - 3.)),
+                    custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                     ..default()
                 },
                 ..default()
             },
+            TextureAtlas::from(TextureAtlas {
+                layout: assets.sprite_sheet_layout.clone(),
+                index: get_sprite_index(0, 1, 5),
+            }),
             SnakeSegment,
             Position::new(segment.x, segment.y),
         ));
     });
 }
 
-fn snake_position_update(
+fn update_board_position(
     board: Res<Board>,
     mut query: Query<(&mut Transform, &Position), With<SnakeSegment>>,
 ) {
     for (mut transform, pos) in query.iter_mut() {
         transform.translation = Vec3::new(
-            board.position_translate(pos.x.into()),
-            board.position_translate(pos.y.into()),
-            1.,
-        )
+            board.position_translate(pos.x),
+            board.position_translate(pos.y),
+            1.0,
+        );
     }
 }
 
-// @todo: do I rename this to update direction?
-fn snake_movement_controls(
+fn movement_controls(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    time: Res<Time>,
-    mut movement_timer: ResMut<MovementTimer>,
-    mut snake_head_query: Query<(&mut SnakeDirection, &mut Position), With<SnakeHead>>,
-    mut snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
+    mut snake_head_query: Query<&mut SnakeDirection, With<SnakeHead>>,
 ) {
-    let Ok((mut snake_direction, mut head_pos)) = snake_head_query.get_single_mut() else {
+    let Ok(mut snake_direction) = snake_head_query.get_single_mut() else {
         return;
     };
 
-    // so now we have a next direction value, this value will be useful if we want to conditionally
-    // check it.
-    let new_direction = if keyboard_input.pressed(KeyCode::ArrowUp)
-        && snake_direction.value != Direction::Down
-    {
-        Direction::Up
-    } else if keyboard_input.pressed(KeyCode::ArrowDown) && snake_direction.value != Direction::Up {
-        Direction::Down
-    } else if keyboard_input.pressed(KeyCode::ArrowLeft)
-        && snake_direction.value != Direction::Right
-    {
-        Direction::Left
-    } else if keyboard_input.pressed(KeyCode::ArrowRight)
-        && snake_direction.value != Direction::Left
-    {
-        Direction::Right
+    // @todo: think how we can handle two key presses at the same time or in quick succession
+    let new_direction = if keyboard_input.just_pressed(KeyCode::ArrowUp) {
+        println!("UP");
+        Some(Direction::Up)
+    } else if keyboard_input.just_pressed(KeyCode::ArrowDown) {
+        println!("DOWN");
+        Some(Direction::Down)
+    } else if keyboard_input.just_pressed(KeyCode::ArrowLeft) {
+        println!("LEFT");
+        Some(Direction::Left)
+    } else if keyboard_input.just_pressed(KeyCode::ArrowRight) {
+        println!("RIGHT");
+        Some(Direction::Right)
     } else {
-        snake_direction.value
+        None
     };
 
-    snake_direction.next_value = match snake_direction.next_value {
-        Direction::Up => {}
-        Direction::Down => {}
-        Direction::Right => {}
-        Direction::Left => {}
-    };
-
-    // @todo: right now if the user quickly presses a new direction and immediatedly presses the
-    // direction in which the snake is moving, the direction that's pressed first will be ignored.
-
-    // update head position based on direction
-    snake_direction.value = new_direction;
-
-    // movement_timer.timer.tick(time.delta());
-    // if !movement_timer.timer.just_finished() {
-    //     return;
-    // }
-
-    // store previous head position, before updating it;
-    let mut prev_pos = head_pos.clone();
-
-    // @todo: have the applying of the new direction on its own system, it should also hold the
-    // time delay.
-    // @todo: have a next direction value and match that to check two inputs don't make he snake
-    // die.
-    // match snake_direction.value {
-    //     Direction::Up => head_pos.y += 1,
-    //     Direction::Down => head_pos.y -= 1,
-    //     Direction::Left => head_pos.x -= 1,
-    //     Direction::Right => head_pos.x += 1,
-    // }
-    //
-    // for (mut segment_pos, _) in snake_body_query.iter_mut() {
-    //     let temp = *segment_pos;
-    //     *segment_pos = prev_pos;
-    //     prev_pos = temp;
-    // }
+    if let Some(new_dir) = new_direction {
+        if new_dir != snake_direction.current.opposite() || new_dir != snake_direction.current {
+            snake_direction.next = Some(new_dir);
+        }
+    }
 }
 
-// @todo: thsi actually effectuates the changes one the positioning of the snake.
-// so name it update_position?
-fn new_system(mut movement_timer: ResMut<MovementTimer>, time: Res<Time>) {
+fn update_position(
+    mut movement_timer: ResMut<MovementTimer>,
+    time: Res<Time>,
+    mut snake_head_query: Query<(&mut SnakeDirection, &mut Position), With<SnakeHead>>,
+    mut snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
+) {
     movement_timer.timer.tick(time.delta());
     if !movement_timer.timer.just_finished() {
         return;
     }
 
-    // @todo: have the applying of the new direction on its own system, it should also hold the
-    // time delay.
-    // @todo: have a next direction value and match that to check two inputs don't make he snake
-    // die.
-    match snake_direction.value {
+    let Ok((mut snake_direction, mut head_pos)) = snake_head_query.get_single_mut() else {
+        return;
+    };
+
+    if let Some(next) = snake_direction.next {
+        if next != snake_direction.current.opposite() {
+            snake_direction.current = next;
+            snake_direction.next = None;
+        }
+    }
+    let mut prev_pos = head_pos.clone();
+
+    match snake_direction.current {
         Direction::Up => head_pos.y += 1,
         Direction::Down => head_pos.y -= 1,
         Direction::Left => head_pos.x -= 1,
         Direction::Right => head_pos.x += 1,
-    }
+    };
 
     for (mut segment_pos, _) in snake_body_query.iter_mut() {
         let temp = *segment_pos;
@@ -234,3 +221,20 @@ fn new_system(mut movement_timer: ResMut<MovementTimer>, time: Res<Time>) {
         prev_pos = temp;
     }
 }
+
+// fn update_direction(mut snake_head_query: Query<&mut SnakeDirection, (With<SnakeHead>)>) {
+//     let Ok(mut snake_direction) = snake_head_query.get_single_mut() else {
+//         return;
+//     };
+//
+//     if let Some(next) = snake_direction.next {
+//         if next != snake_direction.current.opposite() {
+//             println!(
+//                 "{:?} -> {:?}",
+//                 snake_direction.current, snake_direction.next
+//             );
+//             snake_direction.current = next;
+//             // snake_direction.next = None;
+//         }
+//     }
+// }
