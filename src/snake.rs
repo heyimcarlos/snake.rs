@@ -90,7 +90,11 @@ impl Plugin for SnakePlugin {
             .add_systems(Update, movement_controls.in_set(InGameSet::UserInput))
             .add_systems(
                 Update,
-                (update_position, update_board_position)
+                (
+                    update_position.after(movement_controls),
+                    update_board_position.after(update_position),
+                    update_snake_sprite.after(update_position),
+                )
                     .chain()
                     .in_set(InGameSet::EntityUpdates),
             );
@@ -186,7 +190,6 @@ fn movement_controls(
 
     // Iterate through the collected keys and queue valid directions
     for key in keys_pressed {
-        println!("key pressed: {:?}", key);
         let direction = match key {
             KeyCode::ArrowUp => Direction::Up,
             KeyCode::ArrowDown => Direction::Down,
@@ -234,4 +237,22 @@ fn update_position(
         *segment_pos = prev_pos;
         prev_pos = temp;
     }
+}
+
+fn update_snake_sprite(
+    mut query: Query<(&SnakeDirection, &mut TextureAtlas), With<SnakeHead>>,
+    // mut body_query: Query<(&Position, &mut TextureAtlas), With<SnakeSegment>>,
+) {
+    // index: get_sprite_index(0, 4, 5),
+    for (snake_direction, mut sprite) in query.iter_mut() {
+        println!("head pos: {:?}", snake_direction.current);
+        println!("head texture atlas: {:?}", sprite);
+        sprite.index = 1;
+    }
+
+    //
+    // for (pos, mut texture_atlas) in body_query.iter_mut() {
+    //     let index = get_sprite_index(pos.x as u32, pos.y as u32, 5);
+    //     texture_atlas.index = index;
+    // }
 }
