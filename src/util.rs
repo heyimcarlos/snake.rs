@@ -38,7 +38,6 @@ pub fn calc_sprite_index(row: usize, column: usize, columns_per_row: usize) -> u
 }
 
 pub fn detect_direction(from: &Position, to: &Position) -> Direction {
-    dbg!(from, to);
     if to.y > from.y {
         Direction::Up
     } else if to.y < from.y {
@@ -48,6 +47,7 @@ pub fn detect_direction(from: &Position, to: &Position) -> Direction {
     } else if to.x < from.x {
         Direction::Left
     } else {
+        dbg!(from, to);
         panic!("Invalid direction")
     }
 }

@@ -108,8 +108,6 @@ fn apply_eat_food(
             Direction::Right => Position::new(tail_segment.0.x - 1, tail_segment.0.y),
         };
 
-        // dbg!(tail_pos);
-
         commands.spawn((
             SpriteSheetBundle {
                 atlas: TextureAtlas {

@@ -308,7 +308,11 @@ fn update_snake_sprite(
             (Direction::Down, Direction::Left) | (Direction::Right, Direction::Up) => {
                 assets.get_sprite_index(SpritePart::BodyBottomLeft)
             }
-            _ => panic!("invalid direction"),
+            _ => {
+                dbg!(a, b);
+                // panic!("invalid direction");
+                continue;
+            }
         };
         updates.push((mid.1, sprite_index));
     }
