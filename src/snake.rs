@@ -5,7 +5,7 @@ use crate::{
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     state::GameState,
-    util::snake_starting_position,
+    util::{detect_direction, snake_starting_position},
 };
 
 #[derive(Component, Debug)]
@@ -272,12 +272,49 @@ fn update_snake_sprite(
         Direction::Right => assets.get_sprite_index(SpritePart::HeadRight),
     };
 
-    if let Some((_, mut tail_sprite)) = body_query.iter_mut().last() {
-        tail_sprite.index = match snake_direction.current {
-            Direction::Up => assets.get_sprite_index(SpritePart::TailUp),
-            Direction::Down => assets.get_sprite_index(SpritePart::TailDown),
-            Direction::Left => assets.get_sprite_index(SpritePart::TailLeft),
-            Direction::Right => assets.get_sprite_index(SpritePart::TailRight),
-        };
+    let mut segments: Vec<_> = body_query.iter_mut().collect();
+    // [0, 1]
+    for i in 0..segments.len() - 1 {
+        if i == 0 || i == segments.len() - 1 {
+            continue;
+        }
+
+        let prev = &segments[i - 1];
+        let next = &segments[i + 1];
+        println!("prev = {:?}\nnext = {:?}", prev, next);
+
+        let direction_to_prev = detect_direction(segments[i].0, prev.0);
+        let direction_to_next = detect_direction(segments[i].0, next.0);
+
+        match (direction_to_prev, direction_to_next) {
+            (Direction::Up, Direction::Down) | (Direction::Down, Direction::Up) => {
+                segments[i].1.index = assets.get_sprite_index(SpritePart::BodyVertical);
+            }
+            (Direction::Left, Direction::Right) | (Direction::Right, Direction::Left) => {
+                segments[i].1.index = assets.get_sprite_index(SpritePart::BodyHorizontal);
+            }
+            (Direction::Up, Direction::Right) | (Direction::Left, Direction::Down) => {
+                segments[i].1.index = assets.get_sprite_index(SpritePart::BodyTopRight);
+            }
+            (Direction::Up, Direction::Left) | (Direction::Right, Direction::Down) => {
+                segments[i].1.index = assets.get_sprite_index(SpritePart::BodyTopLeft);
+            }
+            (Direction::Down, Direction::Right) | (Direction::Left, Direction::Up) => {
+                segments[i].1.index = assets.get_sprite_index(SpritePart::BodyBottomRight);
+            }
+            (Direction::Down, Direction::Left) | (Direction::Right, Direction::Up) => {
+                segments[i].1.index = assets.get_sprite_index(SpritePart::BodyBottomLeft);
+            }
+            _ => {}
+        }
     }
+
+    // if let Some((_, mut tail_sprite)) = body_query.iter_mut().last() {
+    //     tail_sprite.index = match snake_direction.current {
+    //         Direction::Up => assets.get_sprite_index(SpritePart::TailUp),
+    //         Direction::Down => assets.get_sprite_index(SpritePart::TailDown),
+    //         Direction::Left => assets.get_sprite_index(SpritePart::TailLeft),
+    //         Direction::Right => assets.get_sprite_index(SpritePart::TailRight),
+    //     };
+    // }
 }

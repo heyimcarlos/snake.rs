@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
+    asset_loader::{ImageAssets, SpritePart},
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     snake::{Position, SnakeHead, SnakeSegment},
@@ -37,10 +38,15 @@ impl FoodEvent {
     }
 }
 
-pub fn spawn_food(mut commands: Commands, board: Res<Board>) {
+pub fn spawn_food(mut commands: Commands, board: Res<Board>, assets: Res<ImageAssets>) {
     let food_pos = Position::new(board.size / 2 + 5, board.size / 2);
     commands.spawn((
-        SpriteBundle {
+        SpriteSheetBundle {
+            atlas: TextureAtlas {
+                layout: assets.sprite_sheet_layout.clone(),
+                index: assets.get_sprite_index(SpritePart::Apple),
+            },
+            texture: assets.sprite_sheet.clone(),
             transform: Transform::from_xyz(
                 board.position_translate(food_pos.x),
                 board.position_translate(food_pos.y),
@@ -81,6 +87,7 @@ fn apply_eat_food(
     mut food_event_reader: EventReader<FoodEvent>,
     snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
     board: Res<Board>,
+    assets: Res<ImageAssets>,
 ) {
     for &FoodEvent { entity } in food_event_reader.read() {
         // food eaten, despawn food
@@ -111,6 +118,11 @@ fn apply_eat_food(
         let food_pos = food_position(board.size);
         commands.spawn((
             SpriteBundle {
+                // atlas: TextureAtlas {
+                //     layout: assets.sprite_sheet_layout.clone(),
+                //     index: assets.get_sprite_index(SpritePart::Apple),
+                // },
+                // texture: assets.sprite_sheet.clone(),
                 transform: Transform::from_xyz(
                     board.position_translate(food_pos.x),
                     board.position_translate(food_pos.y),

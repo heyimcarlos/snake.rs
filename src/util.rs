@@ -36,13 +36,21 @@ pub fn food_position(board_size: i32) -> Position {
 pub fn calc_sprite_index(row: usize, column: usize, columns_per_row: usize) -> usize {
     row * columns_per_row + column
 }
-
+// [src/util.rs:41:5] origin = Position {
+//     x: 4,
+//     y: 10,
+// }
+// [src/util.rs:41:5] next = Position {
+//     x: 5,
+//     y: 10,
+// }
 pub fn detect_direction(origin: &Position, next: &Position) -> Direction {
+    dbg!(origin, next);
     if next.y > origin.y {
         Direction::Up
     } else if next.y < origin.y {
         Direction::Down
-    } else if next.x > origin.y {
+    } else if next.x > origin.x {
         Direction::Right
     } else if next.x < origin.x {
         Direction::Left
