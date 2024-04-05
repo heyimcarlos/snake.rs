@@ -1,6 +1,7 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::tracing::Instrument};
 
 use crate::{
+    asset_loader::{ImageAssets, SpritePart},
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     state::GameState,
@@ -9,13 +10,28 @@ use crate::{
 
 #[derive(Component, Debug)]
 pub struct SnakeDirection {
-    value: Direction,
+    current: Direction,
+    directions: Vec<Direction>,
+}
+
+impl SnakeDirection {
+    pub fn queue_direction(&mut self, new_direction: Direction) {
+        // @info: check that the new direction is not the opposite of the last direction, and that we don't have more than 2 directions queued
+        if let Some(&last_direction) = self.directions.last() {
+            if new_direction != last_direction.opposite() && self.directions.len() < 3 {
+                self.directions.push(new_direction);
+            }
+        } else if self.current != new_direction.opposite() {
+            self.directions.push(new_direction);
+        }
+    }
 }
 
 impl Default for SnakeDirection {
     fn default() -> Self {
         SnakeDirection {
-            value: Direction::Right,
+            current: Direction::default(),
+            directions: vec![Direction::Right],
         }
     }
 }
@@ -45,11 +61,22 @@ pub struct MovementTimer {
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
-    #[default]
     Up,
     Down,
     Left,
+    #[default]
     Right,
+}
+
+impl Direction {
+    fn opposite(&self) -> Self {
+        match self {
+            Self::Up => Self::Down,
+            Self::Down => Self::Up,
+            Self::Left => Self::Right,
+            Self::Right => Self::Left,
+        }
+    }
 }
 
 pub struct SnakePlugin;
@@ -60,77 +87,141 @@ impl Plugin for SnakePlugin {
             .insert_resource(MovementTimer {
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
             })
-            .add_systems(Update, snake_movement_controls.in_set(InGameSet::UserInput))
+            .add_systems(Update, movement_controls.in_set(InGameSet::UserInput))
             .add_systems(
                 Update,
-                snake_position_update.in_set(InGameSet::EntityUpdates),
+                (
+                    update_position.after(movement_controls),
+                    update_board_position.after(update_position),
+                    update_snake_sprite.after(update_position),
+                )
+                    .chain()
+                    .in_set(InGameSet::EntityUpdates),
             );
     }
 }
 
-fn spawn_snake(mut commands: Commands, board: Res<Board>) {
+fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAssets>) {
     let start_pos = snake_starting_position(board.size);
 
     // load snake head
     commands.spawn((
-        SpriteBundle {
+        SpriteSheetBundle {
+            atlas: TextureAtlas {
+                layout: assets.sprite_sheet_layout.clone(),
+                index: assets.get_sprite_index(SpritePart::HeadRight),
+            },
             transform: Transform::from_xyz(
                 board.position_translate(start_pos[0].x.into()),
                 board.position_translate(start_pos[0].y.into()),
-                10.0,
+                2.0,
             ),
+            texture: assets.sprite_sheet.clone(),
             sprite: Sprite {
-                color: Color::BLUE,
                 custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                ..default()
+                ..Default::default()
             },
             ..default()
         },
+        // TextureAtlas::from(head_texture),
         SnakeHead,
         SnakeSegment,
         Position::from(start_pos[0]),
         SnakeDirection::default(),
     ));
 
-    // load snake tail
-    start_pos[1..].iter().for_each(|segment| {
-        commands.spawn((
-            SpriteBundle {
-                transform: Transform::from_xyz(
-                    board.position_translate(segment.x.into()),
-                    board.position_translate(segment.y.into()),
-                    10.0,
-                ),
-                sprite: Sprite {
-                    color: Color::GRAY,
-                    custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                    ..default()
-                },
+    commands.spawn((
+        SpriteSheetBundle {
+            transform: Transform::from_xyz(
+                board.position_translate(start_pos[1].x),
+                board.position_translate(start_pos[1].y),
+                10.0,
+            ),
+            texture: assets.sprite_sheet.clone(),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                 ..default()
             },
-            SnakeSegment,
-            Position::new(segment.x, segment.y),
-        ));
-    });
+            atlas: TextureAtlas {
+                layout: assets.sprite_sheet_layout.clone(),
+                index: assets.get_sprite_index(SpritePart::BodyHorizontal),
+            },
+            ..default()
+        },
+        SnakeSegment,
+        Position::new(start_pos[1].x, start_pos[1].y),
+    ));
+
+    commands.spawn((
+        SpriteSheetBundle {
+            transform: Transform::from_xyz(
+                board.position_translate(start_pos[2].x),
+                board.position_translate(start_pos[2].y),
+                10.0,
+            ),
+            texture: assets.sprite_sheet.clone(),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
+                ..default()
+            },
+            atlas: TextureAtlas {
+                layout: assets.sprite_sheet_layout.clone(),
+                index: assets.get_sprite_index(SpritePart::TailRight),
+            },
+            ..default()
+        },
+        SnakeSegment,
+        Position::new(start_pos[2].x, start_pos[2].y),
+    ));
 }
 
-fn snake_position_update(
+fn update_board_position(
     board: Res<Board>,
     mut query: Query<(&mut Transform, &Position), With<SnakeSegment>>,
 ) {
     for (mut transform, pos) in query.iter_mut() {
         transform.translation = Vec3::new(
-            board.position_translate(pos.x.into()),
-            board.position_translate(pos.y.into()),
-            1.,
-        )
+            board.position_translate(pos.x),
+            board.position_translate(pos.y),
+            1.0,
+        );
     }
 }
 
-fn snake_movement_controls(
+fn movement_controls(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    time: Res<Time>,
+    mut snake_head_query: Query<&mut SnakeDirection, With<SnakeHead>>,
+) {
+    let Ok(mut snake_direction) = snake_head_query.get_single_mut() else {
+        return;
+    };
+
+    let keys_pressed: Vec<KeyCode> = keyboard_input
+        .get_just_pressed()
+        .filter_map(|key| match key {
+            KeyCode::ArrowUp | KeyCode::ArrowDown | KeyCode::ArrowLeft | KeyCode::ArrowRight => {
+                Some(*key)
+            }
+            _ => None,
+        })
+        .collect();
+
+    // Iterate through the collected keys and queue valid directions
+    for key in keys_pressed {
+        let direction = match key {
+            KeyCode::ArrowUp => Direction::Up,
+            KeyCode::ArrowDown => Direction::Down,
+            KeyCode::ArrowLeft => Direction::Left,
+            KeyCode::ArrowRight => Direction::Right,
+            _ => continue,
+        };
+        snake_direction.queue_direction(direction);
+    }
+}
+
+fn update_position(
     mut movement_timer: ResMut<MovementTimer>,
+    time: Res<Time>,
     mut snake_head_query: Query<(&mut SnakeDirection, &mut Position), With<SnakeHead>>,
     mut snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
 ) {
@@ -143,43 +234,50 @@ fn snake_movement_controls(
         return;
     };
 
-    let new_direction = if keyboard_input.pressed(KeyCode::ArrowUp)
-        && snake_direction.value != Direction::Down
-    {
-        Direction::Up
-    } else if keyboard_input.pressed(KeyCode::ArrowDown) && snake_direction.value != Direction::Up {
-        Direction::Down
-    } else if keyboard_input.pressed(KeyCode::ArrowLeft)
-        && snake_direction.value != Direction::Right
-    {
-        Direction::Left
-    } else if keyboard_input.pressed(KeyCode::ArrowRight)
-        && snake_direction.value != Direction::Left
-    {
-        Direction::Right
-    } else {
-        snake_direction.value
-    };
+    // @info: check if there's a queued direction and update the current direction
+    // also dequeue the direction
+    if let Some(new_direction) = snake_direction.directions.get(0) {
+        snake_direction.current = *new_direction;
+        snake_direction.directions.remove(0);
+    }
 
-    // @todo: right now if the user quickly presses a new direction and immediatedly presses the
-    // direction in which the snake is moving, the direction that's pressed first will be ignored.
-
-    // update head position based on direction
-    snake_direction.value = new_direction;
-
-    // store previous head position, before updating it;
     let mut prev_pos = head_pos.clone();
 
-    match snake_direction.value {
+    match snake_direction.current {
         Direction::Up => head_pos.y += 1,
         Direction::Down => head_pos.y -= 1,
         Direction::Left => head_pos.x -= 1,
         Direction::Right => head_pos.x += 1,
-    }
+    };
 
     for (mut segment_pos, _) in snake_body_query.iter_mut() {
         let temp = *segment_pos;
         *segment_pos = prev_pos;
         prev_pos = temp;
+    }
+}
+
+fn update_snake_sprite(
+    mut query: Query<(&SnakeDirection, &mut TextureAtlas), With<SnakeHead>>,
+    mut body_query: Query<(&Position, &mut TextureAtlas), Without<SnakeHead>>,
+    assets: Res<ImageAssets>,
+) {
+    let Ok((snake_direction, mut sprite)) = query.get_single_mut() else {
+        return;
+    };
+    sprite.index = match snake_direction.current {
+        Direction::Up => assets.get_sprite_index(SpritePart::HeadUp),
+        Direction::Down => assets.get_sprite_index(SpritePart::HeadDown),
+        Direction::Left => assets.get_sprite_index(SpritePart::HeadLeft),
+        Direction::Right => assets.get_sprite_index(SpritePart::HeadRight),
+    };
+
+    if let Some((_, mut tail_sprite)) = body_query.iter_mut().last() {
+        tail_sprite.index = match snake_direction.current {
+            Direction::Up => assets.get_sprite_index(SpritePart::TailUp),
+            Direction::Down => assets.get_sprite_index(SpritePart::TailDown),
+            Direction::Left => assets.get_sprite_index(SpritePart::TailLeft),
+            Direction::Right => assets.get_sprite_index(SpritePart::TailRight),
+        };
     }
 }
