@@ -11,14 +11,27 @@ use crate::{
 #[derive(Component, Debug)]
 pub struct SnakeDirection {
     current: Direction,
-    next: Option<Direction>,
+    directions: Vec<Direction>,
+}
+
+impl SnakeDirection {
+    pub fn queue_direction(&mut self, new_direction: Direction) {
+        // @info: check that the new direction is not the opposite of the last direction, and that we don't have more than 2 directions queued
+        if let Some(&last_direction) = self.directions.last() {
+            if new_direction != last_direction.opposite() && self.directions.len() < 3 {
+                self.directions.push(new_direction);
+            }
+        } else if self.current != new_direction.opposite() {
+            self.directions.push(new_direction);
+        }
+    }
 }
 
 impl Default for SnakeDirection {
     fn default() -> Self {
         SnakeDirection {
             current: Direction::default(),
-            next: None,
+            directions: vec![Direction::Right],
         }
     }
 }
@@ -161,27 +174,27 @@ fn movement_controls(
         return;
     };
 
-    // @todo: think how we can handle two key presses at the same time or in quick succession
-    let new_direction = if keyboard_input.just_pressed(KeyCode::ArrowUp) {
-        println!("UP");
-        Some(Direction::Up)
-    } else if keyboard_input.just_pressed(KeyCode::ArrowDown) {
-        println!("DOWN");
-        Some(Direction::Down)
-    } else if keyboard_input.just_pressed(KeyCode::ArrowLeft) {
-        println!("LEFT");
-        Some(Direction::Left)
-    } else if keyboard_input.just_pressed(KeyCode::ArrowRight) {
-        println!("RIGHT");
-        Some(Direction::Right)
-    } else {
-        None
-    };
+    let keys_pressed: Vec<KeyCode> = keyboard_input
+        .get_just_pressed()
+        .filter_map(|key| match key {
+            KeyCode::ArrowUp | KeyCode::ArrowDown | KeyCode::ArrowLeft | KeyCode::ArrowRight => {
+                Some(*key)
+            }
+            _ => None,
+        })
+        .collect();
 
-    if let Some(new_dir) = new_direction {
-        if new_dir != snake_direction.current.opposite() || new_dir != snake_direction.current {
-            snake_direction.next = Some(new_dir);
-        }
+    // Iterate through the collected keys and queue valid directions
+    for key in keys_pressed {
+        println!("key pressed: {:?}", key);
+        let direction = match key {
+            KeyCode::ArrowUp => Direction::Up,
+            KeyCode::ArrowDown => Direction::Down,
+            KeyCode::ArrowLeft => Direction::Left,
+            KeyCode::ArrowRight => Direction::Right,
+            _ => continue,
+        };
+        snake_direction.queue_direction(direction);
     }
 }
 
@@ -200,12 +213,13 @@ fn update_position(
         return;
     };
 
-    if let Some(next) = snake_direction.next {
-        if next != snake_direction.current.opposite() {
-            snake_direction.current = next;
-            snake_direction.next = None;
-        }
+    // @info: check if there's a queued direction and update the current direction
+    // also dequeue the direction
+    if let Some(new_direction) = snake_direction.directions.get(0) {
+        snake_direction.current = *new_direction;
+        snake_direction.directions.remove(0);
     }
+
     let mut prev_pos = head_pos.clone();
 
     match snake_direction.current {
@@ -221,20 +235,3 @@ fn update_position(
         prev_pos = temp;
     }
 }
-
-// fn update_direction(mut snake_head_query: Query<&mut SnakeDirection, (With<SnakeHead>)>) {
-//     let Ok(mut snake_direction) = snake_head_query.get_single_mut() else {
-//         return;
-//     };
-//
-//     if let Some(next) = snake_direction.next {
-//         if next != snake_direction.current.opposite() {
-//             println!(
-//                 "{:?} -> {:?}",
-//                 snake_direction.current, snake_direction.next
-//             );
-//             snake_direction.current = next;
-//             // snake_direction.next = None;
-//         }
-//     }
-// }
