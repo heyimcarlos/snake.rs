@@ -1,6 +1,27 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
+use crate::util::calc_sprite_index;
+
+#[derive(Debug, Hash, Eq, PartialEq)]
+pub enum SpritePart {
+    HeadUp,
+    HeadDown,
+    HeadLeft,
+    HeadRight,
+    TailUp,
+    TailDown,
+    TailLeft,
+    TailRight,
+    BodyHorizontal,
+    BodyVertical,
+    BodyTopLeft,
+    BodyTopRight,
+    BodyBottomLeft,
+    BodyBottomRight,
+    Apple,
+}
+
 #[derive(AssetCollection, Resource)]
 pub struct ImageAssets {
     #[asset(path = "snake-graphics.png")]
@@ -9,25 +30,32 @@ pub struct ImageAssets {
     pub sprite_sheet_layout: Handle<TextureAtlasLayout>,
 }
 
+impl ImageAssets {
+    pub fn get_sprite_index(&self, part: SpritePart) -> usize {
+        match part {
+            SpritePart::HeadUp => calc_sprite_index(0, 3, 5),
+            SpritePart::HeadDown => calc_sprite_index(1, 4, 5),
+            SpritePart::HeadLeft => calc_sprite_index(1, 3, 5),
+            SpritePart::HeadRight => calc_sprite_index(0, 4, 5),
+            SpritePart::TailUp => calc_sprite_index(2, 3, 5),
+            SpritePart::TailDown => calc_sprite_index(3, 4, 5),
+            SpritePart::TailLeft => calc_sprite_index(3, 3, 5),
+            SpritePart::TailRight => calc_sprite_index(2, 4, 5),
+            SpritePart::BodyHorizontal => calc_sprite_index(0, 1, 5),
+            SpritePart::BodyVertical => calc_sprite_index(1, 2, 5),
+            SpritePart::BodyTopLeft => calc_sprite_index(0, 2, 5),
+            SpritePart::BodyTopRight => calc_sprite_index(0, 0, 5),
+            SpritePart::BodyBottomLeft => calc_sprite_index(2, 2, 5),
+            SpritePart::BodyBottomRight => calc_sprite_index(1, 0, 5),
+            SpritePart::Apple => calc_sprite_index(3, 0, 5),
+        }
+    }
+}
+
 pub struct AssetLoaderPlugin;
 
 impl Plugin for AssetLoaderPlugin {
     fn build(&self, app: &mut App) {
-        app.init_collection::<ImageAssets>()
-            .add_systems(Startup, load_assets);
+        app.init_collection::<ImageAssets>();
     }
-}
-
-fn load_assets(
-    mut scene_assets: ResMut<ImageAssets>,
-    asset_server: Res<AssetServer>,
-    // mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-) {
-    // let sprite_sheet_image = asset_server.load("snake-graphics.png");
-    // let texture_atlas = TextureAtlas::from_grid(sprite_sheet_image, Vec2::new(32.0, 32.0), 3, 1); // Adjust as needed
-    // let sprite_sheet_handle = texture_atlases.add(texture_atlas);
-
-    // *scene_assets = SceneAssets {
-    //     sprite_sheet: sprite_sheet_handle,
-    // }
 }

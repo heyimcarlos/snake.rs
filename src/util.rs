@@ -33,6 +33,6 @@ pub fn food_position(board_size: i32) -> Position {
     }
 }
 
-pub fn get_sprite_index(row: usize, column: usize, columns_per_row: usize) -> usize {
+pub fn calc_sprite_index(row: usize, column: usize, columns_per_row: usize) -> usize {
     row * columns_per_row + column
 }
