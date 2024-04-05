@@ -1,11 +1,11 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::tracing::Instrument};
 
 use crate::{
-    asset_loader::ImageAssets,
+    asset_loader::{ImageAssets, SpritePart},
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     state::GameState,
-    util::{get_sprite_index, snake_starting_position},
+    util::snake_starting_position,
 };
 
 #[derive(Component, Debug)]
@@ -103,14 +103,14 @@ impl Plugin for SnakePlugin {
 
 fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAssets>) {
     let start_pos = snake_starting_position(board.size);
-    let head_texture = TextureAtlas {
-        layout: assets.sprite_sheet_layout.clone(),
-        index: get_sprite_index(0, 4, 5),
-    };
 
     // load snake head
     commands.spawn((
-        SpriteBundle {
+        SpriteSheetBundle {
+            atlas: TextureAtlas {
+                layout: assets.sprite_sheet_layout.clone(),
+                index: assets.get_sprite_index(SpritePart::HeadRight),
+            },
             transform: Transform::from_xyz(
                 board.position_translate(start_pos[0].x.into()),
                 board.position_translate(start_pos[0].y.into()),
@@ -123,38 +123,56 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAsset
             },
             ..default()
         },
-        TextureAtlas::from(head_texture),
+        // TextureAtlas::from(head_texture),
         SnakeHead,
         SnakeSegment,
         Position::from(start_pos[0]),
         SnakeDirection::default(),
     ));
 
-    // TextureAtlas::from(texture_atlas).index,
-    // load snake tail
-    start_pos[1..].iter().for_each(|segment| {
-        commands.spawn((
-            SpriteBundle {
-                transform: Transform::from_xyz(
-                    board.position_translate(segment.x.into()),
-                    board.position_translate(segment.y.into()),
-                    10.0,
-                ),
-                texture: assets.sprite_sheet.clone(),
-                sprite: Sprite {
-                    custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                    ..default()
-                },
+    commands.spawn((
+        SpriteSheetBundle {
+            transform: Transform::from_xyz(
+                board.position_translate(start_pos[1].x),
+                board.position_translate(start_pos[1].y),
+                10.0,
+            ),
+            texture: assets.sprite_sheet.clone(),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                 ..default()
             },
-            TextureAtlas::from(TextureAtlas {
+            atlas: TextureAtlas {
                 layout: assets.sprite_sheet_layout.clone(),
-                index: get_sprite_index(0, 1, 5),
-            }),
-            SnakeSegment,
-            Position::new(segment.x, segment.y),
-        ));
-    });
+                index: assets.get_sprite_index(SpritePart::BodyHorizontal),
+            },
+            ..default()
+        },
+        SnakeSegment,
+        Position::new(start_pos[1].x, start_pos[1].y),
+    ));
+
+    commands.spawn((
+        SpriteSheetBundle {
+            transform: Transform::from_xyz(
+                board.position_translate(start_pos[2].x),
+                board.position_translate(start_pos[2].y),
+                10.0,
+            ),
+            texture: assets.sprite_sheet.clone(),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
+                ..default()
+            },
+            atlas: TextureAtlas {
+                layout: assets.sprite_sheet_layout.clone(),
+                index: assets.get_sprite_index(SpritePart::TailRight),
+            },
+            ..default()
+        },
+        SnakeSegment,
+        Position::new(start_pos[2].x, start_pos[2].y),
+    ));
 }
 
 fn update_board_position(
@@ -241,18 +259,25 @@ fn update_position(
 
 fn update_snake_sprite(
     mut query: Query<(&SnakeDirection, &mut TextureAtlas), With<SnakeHead>>,
-    // mut body_query: Query<(&Position, &mut TextureAtlas), With<SnakeSegment>>,
+    mut body_query: Query<(&Position, &mut TextureAtlas), Without<SnakeHead>>,
+    assets: Res<ImageAssets>,
 ) {
-    // index: get_sprite_index(0, 4, 5),
-    for (snake_direction, mut sprite) in query.iter_mut() {
-        println!("head pos: {:?}", snake_direction.current);
-        println!("head texture atlas: {:?}", sprite);
-        sprite.index = 1;
-    }
+    let Ok((snake_direction, mut sprite)) = query.get_single_mut() else {
+        return;
+    };
+    sprite.index = match snake_direction.current {
+        Direction::Up => assets.get_sprite_index(SpritePart::HeadUp),
+        Direction::Down => assets.get_sprite_index(SpritePart::HeadDown),
+        Direction::Left => assets.get_sprite_index(SpritePart::HeadLeft),
+        Direction::Right => assets.get_sprite_index(SpritePart::HeadRight),
+    };
 
-    //
-    // for (pos, mut texture_atlas) in body_query.iter_mut() {
-    //     let index = get_sprite_index(pos.x as u32, pos.y as u32, 5);
-    //     texture_atlas.index = index;
-    // }
+    if let Some((_, mut tail_sprite)) = body_query.iter_mut().last() {
+        tail_sprite.index = match snake_direction.current {
+            Direction::Up => assets.get_sprite_index(SpritePart::TailUp),
+            Direction::Down => assets.get_sprite_index(SpritePart::TailDown),
+            Direction::Left => assets.get_sprite_index(SpritePart::TailLeft),
+            Direction::Right => assets.get_sprite_index(SpritePart::TailRight),
+        };
+    }
 }
