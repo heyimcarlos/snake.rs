@@ -29,7 +29,7 @@ fn collision_detection(
     };
 
     // if the snake hits a wall
-    if head_pos.x < 0 || head_pos.y < 0 || head_pos.x >= board.size || head_pos.y >= board.size {
+    if head_pos.x < 0 || head_pos.y < 0 || head_pos.x == board.size || head_pos.y == board.size {
         next_state.set(GameState::GameOver);
     }
 

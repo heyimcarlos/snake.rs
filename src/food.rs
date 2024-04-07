@@ -1,11 +1,12 @@
 use bevy::prelude::*;
 
 use crate::{
+    asset_loader::{ImageAssets, SpritePart},
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
-    snake::{Position, SnakeHead, SnakeSegment},
+    snake::{Direction, Position, SnakeHead, SnakeSegment},
     state::GameState,
-    util::food_position,
+    util::{detect_direction, food_position},
 };
 
 #[derive(Component, Debug)]
@@ -37,10 +38,15 @@ impl FoodEvent {
     }
 }
 
-pub fn spawn_food(mut commands: Commands, board: Res<Board>) {
+pub fn spawn_food(mut commands: Commands, board: Res<Board>, assets: Res<ImageAssets>) {
     let food_pos = Position::new(board.size / 2 + 5, board.size / 2);
     commands.spawn((
-        SpriteBundle {
+        SpriteSheetBundle {
+            atlas: TextureAtlas {
+                layout: assets.sprite_sheet_layout.clone(),
+                index: assets.get_sprite_index(SpritePart::Apple),
+            },
+            texture: assets.sprite_sheet.clone(),
             transform: Transform::from_xyz(
                 board.position_translate(food_pos.x),
                 board.position_translate(food_pos.y),
@@ -48,7 +54,7 @@ pub fn spawn_food(mut commands: Commands, board: Res<Board>) {
             ),
             sprite: Sprite {
                 color: Color::RED,
-                custom_size: Some(Vec2::new(TILE_SIZE - 2., TILE_SIZE - 2.)),
+                custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                 ..default()
             },
             ..Default::default()
@@ -81,44 +87,71 @@ fn apply_eat_food(
     mut food_event_reader: EventReader<FoodEvent>,
     snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
     board: Res<Board>,
+    assets: Res<ImageAssets>,
 ) {
     for &FoodEvent { entity } in food_event_reader.read() {
         // food eaten, despawn food
         commands.entity(entity).despawn();
 
         // @todo: create an enlarge snake event, move that logic outside of this system
-        let Some((tail_pos, _)) = snake_body_query.iter().last() else {
-            return;
+        // let Some((tail_pos, _)) = snake_body_query.iter().last() else {
+        //     return;
+        // };
+        let body_len = snake_body_query.iter().len();
+        let tail_segment = snake_body_query.iter().last().unwrap();
+        let pre_tail_segment = snake_body_query.iter().nth(body_len - 2).unwrap();
+        let tail_direction = detect_direction(pre_tail_segment.0, tail_segment.0);
+        let tail_pos = match tail_direction {
+            Direction::Up => Position::new(tail_segment.0.x, tail_segment.0.y - 1),
+            Direction::Down => Position::new(tail_segment.0.x, tail_segment.0.y + 1),
+            Direction::Left => Position::new(tail_segment.0.x + 1, tail_segment.0.y),
+            Direction::Right => Position::new(tail_segment.0.x - 1, tail_segment.0.y),
         };
+
         commands.spawn((
-            SpriteBundle {
+            SpriteSheetBundle {
+                atlas: TextureAtlas {
+                    layout: assets.sprite_sheet_layout.clone(),
+                    index: match tail_direction {
+                        Direction::Up => assets.get_sprite_index(SpritePart::TailUp),
+                        Direction::Down => assets.get_sprite_index(SpritePart::TailDown),
+                        Direction::Left => assets.get_sprite_index(SpritePart::TailLeft),
+                        Direction::Right => assets.get_sprite_index(SpritePart::TailRight),
+                    },
+                },
+                texture: assets.sprite_sheet.clone(),
                 transform: Transform::from_xyz(
-                    board.position_translate(tail_pos.x.into()),
-                    board.position_translate(tail_pos.y.into()),
+                    board.position_translate(tail_pos.x),
+                    board.position_translate(tail_pos.y),
                     10.0,
                 ),
                 sprite: Sprite {
-                    color: Color::GRAY,
+                    // color: Color::GRAY,
                     custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                     ..default()
                 },
                 ..default()
             },
             SnakeSegment,
-            Position::new(tail_pos.x, tail_pos.y),
+            tail_pos,
+            // Position::new(tail_pos.x, tail_pos.y),
         ));
 
         let food_pos = food_position(board.size);
         commands.spawn((
-            SpriteBundle {
+            SpriteSheetBundle {
+                atlas: TextureAtlas {
+                    layout: assets.sprite_sheet_layout.clone(),
+                    index: assets.get_sprite_index(SpritePart::Apple),
+                },
+                texture: assets.sprite_sheet.clone(),
                 transform: Transform::from_xyz(
                     board.position_translate(food_pos.x),
                     board.position_translate(food_pos.y),
                     1.0,
                 ),
                 sprite: Sprite {
-                    color: Color::RED,
-                    custom_size: Some(Vec2::new(TILE_SIZE - 2., TILE_SIZE - 2.)),
+                    custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                     ..default()
                 },
                 ..Default::default()

@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use crate::snake::Position;
+use crate::snake::{Direction, Position};
 
 pub fn snake_starting_position(board_size: i32) -> Vec<Position> {
     // let mut rng = rand::thread_rng();
@@ -35,4 +35,19 @@ pub fn food_position(board_size: i32) -> Position {
 
 pub fn calc_sprite_index(row: usize, column: usize, columns_per_row: usize) -> usize {
     row * columns_per_row + column
+}
+
+pub fn detect_direction(from: &Position, to: &Position) -> Direction {
+    if to.y > from.y {
+        Direction::Up
+    } else if to.y < from.y {
+        Direction::Down
+    } else if to.x > from.x {
+        Direction::Right
+    } else if to.x < from.x {
+        Direction::Left
+    } else {
+        dbg!(from, to);
+        panic!("Invalid direction")
+    }
 }

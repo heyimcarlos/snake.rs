@@ -3,7 +3,7 @@ use bevy_asset_loader::prelude::*;
 
 use crate::util::calc_sprite_index;
 
-#[derive(Debug, Hash, Eq, PartialEq)]
+#[derive(Debug, Hash, Eq, PartialEq, Clone)]
 pub enum SpritePart {
     HeadUp,
     HeadDown,

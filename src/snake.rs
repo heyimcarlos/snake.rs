@@ -1,11 +1,12 @@
-use bevy::{prelude::*, utils::tracing::Instrument};
+use bevy::prelude::*;
+use itertools::Itertools;
 
 use crate::{
     asset_loader::{ImageAssets, SpritePart},
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     state::GameState,
-    util::snake_starting_position,
+    util::{detect_direction, snake_starting_position},
 };
 
 #[derive(Component, Debug)]
@@ -258,11 +259,15 @@ fn update_position(
 }
 
 fn update_snake_sprite(
-    mut query: Query<(&SnakeDirection, &mut TextureAtlas), With<SnakeHead>>,
-    mut body_query: Query<(&Position, &mut TextureAtlas), Without<SnakeHead>>,
+    mut snake_query: Query<
+        (&Position, &mut TextureAtlas, Entity),
+        (With<SnakeSegment>, Without<SnakeHead>),
+    >,
+    mut snake_head_query: Query<(&SnakeDirection, &mut TextureAtlas), With<SnakeHead>>,
     assets: Res<ImageAssets>,
 ) {
-    let Ok((snake_direction, mut sprite)) = query.get_single_mut() else {
+    // head
+    let Ok((snake_direction, mut sprite)) = snake_head_query.get_single_mut() else {
         return;
     };
     sprite.index = match snake_direction.current {
@@ -272,7 +277,54 @@ fn update_snake_sprite(
         Direction::Right => assets.get_sprite_index(SpritePart::HeadRight),
     };
 
-    if let Some((_, mut tail_sprite)) = body_query.iter_mut().last() {
+    // body
+    let segments: Vec<(&Position, Entity)> = snake_query
+        .iter()
+        .map(|(pos, _, entity)| (pos, entity))
+        .collect();
+
+    let mut updates: Vec<(Entity, usize)> = vec![];
+
+    for (front, mid, back) in segments.iter().tuple_windows() {
+        let a = detect_direction(mid.0, front.0);
+        let b = detect_direction(mid.0, back.0);
+
+        let sprite_index = match (a, b) {
+            (Direction::Up, Direction::Down) | (Direction::Down, Direction::Up) => {
+                assets.get_sprite_index(SpritePart::BodyVertical)
+            }
+            (Direction::Left, Direction::Right) | (Direction::Right, Direction::Left) => {
+                assets.get_sprite_index(SpritePart::BodyHorizontal)
+            }
+            (Direction::Up, Direction::Right) | (Direction::Left, Direction::Down) => {
+                assets.get_sprite_index(SpritePart::BodyTopRight)
+            }
+            (Direction::Up, Direction::Left) | (Direction::Right, Direction::Down) => {
+                assets.get_sprite_index(SpritePart::BodyTopLeft)
+            }
+            (Direction::Down, Direction::Right) | (Direction::Left, Direction::Up) => {
+                assets.get_sprite_index(SpritePart::BodyBottomRight)
+            }
+            (Direction::Down, Direction::Left) | (Direction::Right, Direction::Up) => {
+                assets.get_sprite_index(SpritePart::BodyBottomLeft)
+            }
+            _ => {
+                dbg!(a, b);
+                // panic!("invalid direction");
+                continue;
+            }
+        };
+        updates.push((mid.1, sprite_index));
+    }
+
+    for (entity, sprite_index) in updates {
+        if let Ok((_, mut sprite, _)) = snake_query.get_mut(entity) {
+            sprite.index = sprite_index;
+        }
+    }
+
+    // tail
+    if let Some((_, mut tail_sprite, _)) = snake_query.iter_mut().last() {
         tail_sprite.index = match snake_direction.current {
             Direction::Up => assets.get_sprite_index(SpritePart::TailUp),
             Direction::Down => assets.get_sprite_index(SpritePart::TailDown),
