@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use bevy::prelude::*;
 use itertools::Itertools;
 
@@ -10,12 +12,12 @@ use crate::{
 };
 
 #[derive(Component, Debug)]
-pub struct SnakeDirection {
+pub struct SnakeHeadDirection {
     current: Direction,
     directions: Vec<Direction>,
 }
 
-impl SnakeDirection {
+impl SnakeHeadDirection {
     pub fn queue_direction(&mut self, new_direction: Direction) {
         // @info: check that the new direction is not the opposite of the last direction, and that we don't have more than 2 directions queued
         if let Some(&last_direction) = self.directions.last() {
@@ -28,9 +30,9 @@ impl SnakeDirection {
     }
 }
 
-impl Default for SnakeDirection {
+impl Default for SnakeHeadDirection {
     fn default() -> Self {
-        SnakeDirection {
+        SnakeHeadDirection {
             current: Direction::default(),
             directions: vec![Direction::Right],
         }
@@ -80,11 +82,21 @@ impl Direction {
     }
 }
 
+#[derive(Resource, Debug)]
+pub struct SnakeDirectionQueue {
+    directions: VecDeque<Direction>,
+}
+
 pub struct SnakePlugin;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::BeforeGame), spawn_snake)
+            .insert_resource(SnakeDirectionQueue {
+                // @info: the snake directions queue starts with all 3 initial segments of the
+                // snake moving right.
+                directions: VecDeque::from([Direction::Right; 3]),
+            })
             .insert_resource(MovementTimer {
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
             })
@@ -124,11 +136,10 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAsset
             },
             ..default()
         },
-        // TextureAtlas::from(head_texture),
         SnakeHead,
         SnakeSegment,
         Position::from(start_pos[0]),
-        SnakeDirection::default(),
+        SnakeHeadDirection::default(),
     ));
 
     commands.spawn((
@@ -191,7 +202,7 @@ fn update_board_position(
 
 fn movement_controls(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut snake_head_query: Query<&mut SnakeDirection, With<SnakeHead>>,
+    mut snake_head_query: Query<&mut SnakeHeadDirection, With<SnakeHead>>,
 ) {
     let Ok(mut snake_direction) = snake_head_query.get_single_mut() else {
         return;
@@ -216,15 +227,19 @@ fn movement_controls(
             KeyCode::ArrowRight => Direction::Right,
             _ => continue,
         };
+        // @info: new head direction to be queued
         snake_direction.queue_direction(direction);
     }
 }
 
+// @todo: use a vecdeque to keep the snakes positions.
+// @todo: use a vecdequeue for directions
 fn update_position(
     mut movement_timer: ResMut<MovementTimer>,
     time: Res<Time>,
-    mut snake_head_query: Query<(&mut SnakeDirection, &mut Position), With<SnakeHead>>,
+    mut snake_head_query: Query<(&mut SnakeHeadDirection, &mut Position), With<SnakeHead>>,
     mut snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
+    mut direction_queue: ResMut<SnakeDirectionQueue>,
 ) {
     movement_timer.timer.tick(time.delta());
     if !movement_timer.timer.just_finished() {
@@ -241,6 +256,12 @@ fn update_position(
         snake_direction.current = *new_direction;
         snake_direction.directions.remove(0);
     }
+
+    // @info: new head direction is already in current, so push it to the direction queue.
+    direction_queue
+        .directions
+        .push_front(snake_direction.current);
+    direction_queue.directions.pop_back();
 
     let mut prev_pos = head_pos.clone();
 
@@ -263,7 +284,7 @@ fn update_snake_sprite(
         (&Position, &mut TextureAtlas, Entity),
         (With<SnakeSegment>, Without<SnakeHead>),
     >,
-    mut snake_head_query: Query<(&SnakeDirection, &mut TextureAtlas), With<SnakeHead>>,
+    mut snake_head_query: Query<(&SnakeHeadDirection, &mut TextureAtlas), With<SnakeHead>>,
     assets: Res<ImageAssets>,
 ) {
     // head
@@ -278,14 +299,9 @@ fn update_snake_sprite(
     };
 
     // body
-    let segments: Vec<(&Position, Entity)> = snake_query
-        .iter()
-        .map(|(pos, _, entity)| (pos, entity))
-        .collect();
-
     let mut updates: Vec<(Entity, usize)> = vec![];
 
-    for (front, mid, back) in segments.iter().tuple_windows() {
+    for (front, mid, back) in snake_query.iter().tuple_windows() {
         let a = detect_direction(mid.0, front.0);
         let b = detect_direction(mid.0, back.0);
 
@@ -309,12 +325,10 @@ fn update_snake_sprite(
                 assets.get_sprite_index(SpritePart::BodyBottomLeft)
             }
             _ => {
-                dbg!(a, b);
-                // panic!("invalid direction");
                 continue;
             }
         };
-        updates.push((mid.1, sprite_index));
+        updates.push((mid.2, sprite_index));
     }
 
     for (entity, sprite_index) in updates {

@@ -94,20 +94,24 @@ fn apply_eat_food(
         commands.entity(entity).despawn();
 
         // @todo: create an enlarge snake event, move that logic outside of this system
-        // let Some((tail_pos, _)) = snake_body_query.iter().last() else {
-        //     return;
-        // };
+        let Some((tail_pos, _)) = snake_body_query.iter().last() else {
+            return;
+        };
         let body_len = snake_body_query.iter().len();
         let tail_segment = snake_body_query.iter().last().unwrap();
         let pre_tail_segment = snake_body_query.iter().nth(body_len - 2).unwrap();
         let tail_direction = detect_direction(pre_tail_segment.0, tail_segment.0);
-        let tail_pos = match tail_direction {
+        println!("current tail direction: {:?}", tail_direction);
+        let new_tail_pos = match tail_direction {
             Direction::Up => Position::new(tail_segment.0.x, tail_segment.0.y - 1),
             Direction::Down => Position::new(tail_segment.0.x, tail_segment.0.y + 1),
-            Direction::Left => Position::new(tail_segment.0.x + 1, tail_segment.0.y),
-            Direction::Right => Position::new(tail_segment.0.x - 1, tail_segment.0.y),
+            Direction::Left => Position::new(tail_segment.0.x - 1, tail_segment.0.y),
+            Direction::Right => Position::new(tail_segment.0.x + 1, tail_segment.0.y),
         };
 
+        println!("pre-tail segment position: {:?}", pre_tail_segment);
+        println!("tail segment position: {:?}", tail_segment);
+        println!("new tail segment position: {:?}", new_tail_pos);
         commands.spawn((
             SpriteSheetBundle {
                 atlas: TextureAtlas {
@@ -126,15 +130,15 @@ fn apply_eat_food(
                     10.0,
                 ),
                 sprite: Sprite {
-                    // color: Color::GRAY,
+                    color: Color::GRAY,
                     custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                     ..default()
                 },
                 ..default()
             },
             SnakeSegment,
-            tail_pos,
-            // Position::new(tail_pos.x, tail_pos.y),
+            // tail_pos,
+            Position::new(tail_pos.x, tail_pos.y),
         ));
 
         let food_pos = food_position(board.size);

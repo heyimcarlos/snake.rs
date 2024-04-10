@@ -3,6 +3,7 @@ use bevy_asset_loader::prelude::*;
 
 use crate::util::calc_sprite_index;
 
+// @todo: just use this to map parts to the indexes
 #[derive(Debug, Hash, Eq, PartialEq, Clone)]
 pub enum SpritePart {
     HeadUp,
@@ -30,6 +31,7 @@ pub struct ImageAssets {
     pub sprite_sheet_layout: Handle<TextureAtlasLayout>,
 }
 
+// @todo: use built-in indices instead of manually mappng them
 impl ImageAssets {
     pub fn get_sprite_index(&self, part: SpritePart) -> usize {
         match part {
