@@ -4,10 +4,11 @@ use crate::state::GameState;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
 pub enum InGameSet {
-    UserInput,
-    EntityUpdates,
-    CollisionDetection,
     DespawnEntities,
+    UserInput,
+    PositionUpdates,
+    CollisionDetection,
+    EntityUpdates,
 }
 
 pub struct SchedulePlugin;
@@ -19,8 +20,9 @@ impl Plugin for SchedulePlugin {
             (
                 InGameSet::DespawnEntities,
                 InGameSet::UserInput,
-                InGameSet::EntityUpdates,
+                InGameSet::PositionUpdates,
                 InGameSet::CollisionDetection,
+                InGameSet::EntityUpdates,
             )
                 .chain()
                 .run_if(in_state(GameState::InGame)),
