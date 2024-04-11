@@ -6,7 +6,7 @@ use crate::{
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     state::GameState,
-    util::{detect_direction, snake_starting_position},
+    util::snake_starting_position,
 };
 
 #[derive(Component, Debug)]

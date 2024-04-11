@@ -1,4 +1,3 @@
-use crate::util::calc_sprite_index;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 

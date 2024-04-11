@@ -6,7 +6,7 @@ use crate::{
     schedule::InGameSet,
     snake::{Direction, Position, SnakeDirectionQueue, SnakeHead, SnakeSegment},
     state::GameState,
-    util::{detect_direction, food_position},
+    util::food_position,
 };
 
 #[derive(Component, Debug)]
