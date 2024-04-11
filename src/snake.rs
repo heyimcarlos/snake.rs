@@ -81,7 +81,7 @@ impl Direction {
     }
 }
 
-#[derive(Resource, Debug)]
+#[derive(Resource, Debug, Default)]
 pub struct SnakeDirectionQueue {
     pub directions: VecDeque<Direction>,
 }
@@ -90,15 +90,12 @@ pub struct SnakePlugin;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::BeforeGame), spawn_snake)
-            .insert_resource(SnakeDirectionQueue {
-                // @info: the snake directions queue starts with all 3 initial segments of the
-                // snake moving right.
-                directions: VecDeque::from([Direction::Right; 3]),
-            })
+        app.init_resource::<SnakeDirectionQueue>()
             .insert_resource(MovementTimer {
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
             })
+            .add_systems(OnEnter(GameState::BeforeGame), spawn_snake)
+            .add_systems(OnEnter(GameState::BeforeGame), load_snake_direction_queue)
             .add_systems(Update, movement_controls.in_set(InGameSet::UserInput))
             .add_systems(
                 Update,
@@ -107,6 +104,12 @@ impl Plugin for SnakePlugin {
                     .in_set(InGameSet::PositionUpdates),
             );
     }
+}
+
+fn load_snake_direction_queue(mut snake_direction_queue: ResMut<SnakeDirectionQueue>) {
+    *snake_direction_queue = SnakeDirectionQueue {
+        directions: VecDeque::from([Direction::Right; 3]),
+    };
 }
 
 fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAssets>) {
