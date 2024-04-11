@@ -4,9 +4,9 @@ use crate::{
     asset_loader::{ImageAssets, SpritePart},
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
-    snake::{Direction, Position, SnakeHead, SnakeSegment},
+    snake::{Direction, Position, SnakeDirectionQueue, SnakeHead, SnakeSegment},
     state::GameState,
-    util::{detect_direction, food_position},
+    util::food_position,
 };
 
 #[derive(Component, Debug)]
@@ -44,7 +44,7 @@ pub fn spawn_food(mut commands: Commands, board: Res<Board>, assets: Res<ImageAs
         SpriteSheetBundle {
             atlas: TextureAtlas {
                 layout: assets.sprite_sheet_layout.clone(),
-                index: assets.get_sprite_index(SpritePart::Apple),
+                index: SpritePart::Apple as usize,
             },
             texture: assets.sprite_sheet.clone(),
             transform: Transform::from_xyz(
@@ -88,39 +88,26 @@ fn apply_eat_food(
     snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
     board: Res<Board>,
     assets: Res<ImageAssets>,
+    mut snake_direction_queue: ResMut<SnakeDirectionQueue>,
 ) {
     for &FoodEvent { entity } in food_event_reader.read() {
-        // food eaten, despawn food
+        // @info: food eaten, despawn food
         commands.entity(entity).despawn();
+        let tail_direction = snake_direction_queue.directions.back().unwrap().clone();
+        snake_direction_queue.directions.push_back(tail_direction);
 
-        // @todo: create an enlarge snake event, move that logic outside of this system
-        let Some((tail_pos, _)) = snake_body_query.iter().last() else {
+        let Some((&tail_pos, _)) = snake_body_query.iter().last() else {
             return;
         };
-        let body_len = snake_body_query.iter().len();
-        let tail_segment = snake_body_query.iter().last().unwrap();
-        let pre_tail_segment = snake_body_query.iter().nth(body_len - 2).unwrap();
-        let tail_direction = detect_direction(pre_tail_segment.0, tail_segment.0);
-        println!("current tail direction: {:?}", tail_direction);
-        let new_tail_pos = match tail_direction {
-            Direction::Up => Position::new(tail_segment.0.x, tail_segment.0.y - 1),
-            Direction::Down => Position::new(tail_segment.0.x, tail_segment.0.y + 1),
-            Direction::Left => Position::new(tail_segment.0.x - 1, tail_segment.0.y),
-            Direction::Right => Position::new(tail_segment.0.x + 1, tail_segment.0.y),
-        };
-
-        println!("pre-tail segment position: {:?}", pre_tail_segment);
-        println!("tail segment position: {:?}", tail_segment);
-        println!("new tail segment position: {:?}", new_tail_pos);
         commands.spawn((
             SpriteSheetBundle {
                 atlas: TextureAtlas {
                     layout: assets.sprite_sheet_layout.clone(),
                     index: match tail_direction {
-                        Direction::Up => assets.get_sprite_index(SpritePart::TailUp),
-                        Direction::Down => assets.get_sprite_index(SpritePart::TailDown),
-                        Direction::Left => assets.get_sprite_index(SpritePart::TailLeft),
-                        Direction::Right => assets.get_sprite_index(SpritePart::TailRight),
+                        Direction::Up => SpritePart::TailUp as usize,
+                        Direction::Down => SpritePart::TailDown as usize,
+                        Direction::Left => SpritePart::TailLeft as usize,
+                        Direction::Right => SpritePart::TailRight as usize,
                     },
                 },
                 texture: assets.sprite_sheet.clone(),
@@ -130,15 +117,13 @@ fn apply_eat_food(
                     10.0,
                 ),
                 sprite: Sprite {
-                    color: Color::GRAY,
                     custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                     ..default()
                 },
                 ..default()
             },
             SnakeSegment,
-            // tail_pos,
-            Position::new(tail_pos.x, tail_pos.y),
+            Position::from(tail_pos),
         ));
 
         let food_pos = food_position(board.size);
@@ -146,7 +131,7 @@ fn apply_eat_food(
             SpriteSheetBundle {
                 atlas: TextureAtlas {
                     layout: assets.sprite_sheet_layout.clone(),
-                    index: assets.get_sprite_index(SpritePart::Apple),
+                    index: SpritePart::Apple as usize,
                 },
                 texture: assets.sprite_sheet.clone(),
                 transform: Transform::from_xyz(

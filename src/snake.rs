@@ -1,15 +1,13 @@
+use bevy::prelude::*;
 use core::panic;
 use std::collections::VecDeque;
-
-use bevy::prelude::*;
-use itertools::Itertools;
 
 use crate::{
     asset_loader::{ImageAssets, SpritePart},
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     state::GameState,
-    util::{detect_direction, snake_starting_position},
+    util::snake_starting_position,
 };
 
 #[derive(Component, Debug)]
@@ -85,7 +83,7 @@ impl Direction {
 
 #[derive(Resource, Debug)]
 pub struct SnakeDirectionQueue {
-    directions: VecDeque<Direction>,
+    pub directions: VecDeque<Direction>,
 }
 
 pub struct SnakePlugin;
@@ -104,11 +102,10 @@ impl Plugin for SnakePlugin {
             .add_systems(Update, movement_controls.in_set(InGameSet::UserInput))
             .add_systems(
                 Update,
-                (update_position, update_board_position)
+                (update_position, update_board_position, update_snake_sprite)
                     .chain()
                     .in_set(InGameSet::PositionUpdates),
-            )
-            .add_systems(PostUpdate, update_snake_sprite);
+            );
     }
 }
 
@@ -120,7 +117,7 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAsset
         SpriteSheetBundle {
             atlas: TextureAtlas {
                 layout: assets.sprite_sheet_layout.clone(),
-                index: assets.get_sprite_index(SpritePart::HeadRight),
+                index: SpritePart::HeadRight as usize,
             },
             transform: Transform::from_xyz(
                 board.position_translate(start_pos[0].x.into()),
@@ -154,7 +151,7 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAsset
             },
             atlas: TextureAtlas {
                 layout: assets.sprite_sheet_layout.clone(),
-                index: assets.get_sprite_index(SpritePart::BodyHorizontal),
+                index: SpritePart::BodyHorizontal as usize,
             },
             ..default()
         },
@@ -176,7 +173,7 @@ fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAsset
             },
             atlas: TextureAtlas {
                 layout: assets.sprite_sheet_layout.clone(),
-                index: assets.get_sprite_index(SpritePart::TailRight),
+                index: SpritePart::TailRight as usize,
             },
             ..default()
         },
@@ -230,40 +227,38 @@ fn movement_controls(
     }
 }
 
-// @todo: use a vecdeque to keep the snakes positions.
-// @todo: use a vecdequeue for directions
 fn update_position(
     mut movement_timer: ResMut<MovementTimer>,
     time: Res<Time>,
     mut snake_head_query: Query<(&mut SnakeHeadDirection, &mut Position), With<SnakeHead>>,
     mut snake_body_query: Query<(&mut Position, &SnakeSegment), Without<SnakeHead>>,
-    mut direction_queue: ResMut<SnakeDirectionQueue>,
+    mut snake_direction_queue: ResMut<SnakeDirectionQueue>,
 ) {
     movement_timer.timer.tick(time.delta());
     if !movement_timer.timer.just_finished() {
         return;
     }
 
-    let Ok((mut snake_direction_input, mut head_pos)) = snake_head_query.get_single_mut() else {
+    let Ok((mut snake_head_direction_input, mut head_pos)) = snake_head_query.get_single_mut()
+    else {
         return;
     };
 
     // @info: check if there's a queued direction and update the current direction
-    // also dequeue the direction
-    if let Some(new_direction) = snake_direction_input.directions.get(0) {
-        snake_direction_input.current = *new_direction;
-        snake_direction_input.directions.remove(0);
+    // also dequeue the first direction
+    if let Some(new_direction) = snake_head_direction_input.directions.get(0) {
+        snake_head_direction_input.current = *new_direction;
+        snake_head_direction_input.directions.remove(0);
     }
 
-    // @info: new head direction is already in current, so push it to the direction queue.
-    direction_queue
+    snake_direction_queue
         .directions
-        .push_front(snake_direction_input.current);
-    direction_queue.directions.pop_back();
+        .push_front(snake_head_direction_input.current);
+    snake_direction_queue.directions.pop_back();
 
     let mut prev_pos = head_pos.clone();
 
-    match snake_direction_input.current {
+    match snake_head_direction_input.current {
         Direction::Up => head_pos.y += 1,
         Direction::Down => head_pos.y -= 1,
         Direction::Left => head_pos.x -= 1,
@@ -275,20 +270,14 @@ fn update_position(
         *segment_pos = prev_pos;
         prev_pos = temp;
     }
-    dbg!(&direction_queue.directions);
 }
 
-// add index to spawn entity to render some text
-
 fn update_snake_sprite(
-    mut snake_query: Query<(&Position, &mut TextureAtlas, Entity), (With<SnakeSegment>)>,
-    // mut snake_head_query: Query<(&SnakeHeadDirection, &mut TextureAtlas), With<SnakeHead>>,
-    assets: Res<ImageAssets>,
+    mut snake_query: Query<(&Position, &mut TextureAtlas, Entity), With<SnakeSegment>>,
     direction_queue: Res<SnakeDirectionQueue>,
 ) {
-    // @info: iterate through the snake and based on the two directions close to each other, decide
-    // the sprite
-
+    // @info: zip an immutable iter from directions and a mutable for the snake_query which
+    // contains the sprite.
     for (i, (direction, (_, mut sprite, _))) in direction_queue
         .directions
         .iter()
@@ -297,39 +286,41 @@ fn update_snake_sprite(
     {
         sprite.index = if i == 0 {
             match direction {
-                Direction::Up => assets.get_sprite_index(SpritePart::HeadUp),
-                Direction::Down => assets.get_sprite_index(SpritePart::HeadDown),
-                Direction::Left => assets.get_sprite_index(SpritePart::HeadLeft),
-                Direction::Right => assets.get_sprite_index(SpritePart::HeadRight),
+                Direction::Up => SpritePart::HeadUp as usize,
+                Direction::Down => SpritePart::HeadDown as usize,
+                Direction::Left => SpritePart::HeadLeft as usize,
+                Direction::Right => SpritePart::HeadRight as usize,
             }
         } else if i == direction_queue.directions.len() - 1 {
+            // @info: use the segment of the snake that's previous to the snake tail to decide the
+            // tails direction
             let prev_direction = direction_queue.directions[i - 1];
             match prev_direction {
-                Direction::Up => assets.get_sprite_index(SpritePart::TailUp),
-                Direction::Down => assets.get_sprite_index(SpritePart::TailDown),
-                Direction::Left => assets.get_sprite_index(SpritePart::TailLeft),
-                Direction::Right => assets.get_sprite_index(SpritePart::TailRight),
+                Direction::Up => SpritePart::TailUp as usize,
+                Direction::Down => SpritePart::TailDown as usize,
+                Direction::Left => SpritePart::TailLeft as usize,
+                Direction::Right => SpritePart::TailRight as usize,
             }
         } else {
             let prev_direction = direction_queue.directions[i - 1];
             match (direction, prev_direction) {
                 (Direction::Up, Direction::Up) | (Direction::Down, Direction::Down) => {
-                    assets.get_sprite_index(SpritePart::BodyVertical)
+                    SpritePart::BodyVertical as usize
                 }
                 (Direction::Left, Direction::Left) | (Direction::Right, Direction::Right) => {
-                    assets.get_sprite_index(SpritePart::BodyHorizontal)
+                    SpritePart::BodyHorizontal as usize
                 }
                 (Direction::Up, Direction::Right) | (Direction::Left, Direction::Down) => {
-                    assets.get_sprite_index(SpritePart::BodyTopRight)
+                    SpritePart::BodyTopRight as usize
                 }
                 (Direction::Up, Direction::Left) | (Direction::Right, Direction::Down) => {
-                    assets.get_sprite_index(SpritePart::BodyTopLeft)
+                    SpritePart::BodyTopLeft as usize
                 }
                 (Direction::Down, Direction::Right) | (Direction::Left, Direction::Up) => {
-                    assets.get_sprite_index(SpritePart::BodyBottomRight)
+                    SpritePart::BodyBottomRight as usize
                 }
                 (Direction::Down, Direction::Left) | (Direction::Right, Direction::Up) => {
-                    assets.get_sprite_index(SpritePart::BodyBottomLeft)
+                    SpritePart::BodyBottomLeft as usize
                 }
                 _ => {
                     println!("No match");
