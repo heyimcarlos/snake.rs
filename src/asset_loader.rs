@@ -1,7 +1,7 @@
+use crate::util::calc_sprite_index;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-// @todo: just use this to map parts to the indexes
 #[derive(Debug, Hash, Eq, PartialEq, Clone)]
 pub enum SpritePart {
     BodyTopRight = 0,

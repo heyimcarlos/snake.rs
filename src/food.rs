@@ -6,7 +6,7 @@ use crate::{
     schedule::InGameSet,
     snake::{Direction, Position, SnakeDirectionQueue, SnakeHead, SnakeSegment},
     state::GameState,
-    util::food_position,
+    util::{detect_direction, food_position},
 };
 
 #[derive(Component, Debug)]
@@ -99,6 +99,7 @@ fn apply_eat_food(
         let Some((&tail_pos, _)) = snake_body_query.iter().last() else {
             return;
         };
+
         commands.spawn((
             SpriteSheetBundle {
                 atlas: TextureAtlas {

@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use core::panic;
 use std::collections::VecDeque;
 
 use crate::{
@@ -7,7 +6,7 @@ use crate::{
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
     state::GameState,
-    util::snake_starting_position,
+    util::{detect_direction, snake_starting_position},
 };
 
 #[derive(Component, Debug)]
