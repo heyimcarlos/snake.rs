@@ -3,32 +3,24 @@
 ### What's snake?
 - The player (snake) moves in a 2d map (4 directions) in search of food (randomly spawned, one at a time)
 - Every time the snake eats food, the length of the snake is increased, thus making the game harder
-- The game is over if a collision is detected on a any of the 4 walls of the map
-
-### Thought process
-    - Since the speed of the snake is contant, we won't be using acceleration.
+- The game is over if a collision is detected on a any of the 4 walls of the map or the snake itself
 
 ## ECS List
 
 ### Entities
-- Camera (2d vector?)
-- Player
+- Camera
+- Player (snake)
+- Food
 
 ### Components
-- Velocity (movement)
-
-### Systems 
+- SnakeSegment 
+- SnakeHeadDirection
+- Direction
+- Position
 
 #### Todos
-- [ ] Asset Loader Plugin (load assets in a more organized fashion)
-    - SceneAsset Resource that stores the scenes for assets, making them more modular.
-    - `load_asset`system that instantiates the SceneAsset Resource (struct) with a asset_server resource 
-    - When the plugin builds, it should initiate the resource on startup schedule
-- [ ] Camera plugin
-    - `spawn_camera` system that initializes a 3d or 2d camera bundle.
-- [x] State plugin
-    - setup game state with InGame, Paused, and GameOver
-    - have a system that handles pausing based on some key press
-- [x] Schedule plugin
-    - setup different system set options? do we need to group system execution order between different plugins?
-    - choose the different system set options to group systems (we previously used DespawnEntities, UserInput, CollisionDetection) as options
+
+- [ ] Add index to spawn entity to render some text as a debugger
+- [ ] Camera plugin: `spawn_camera` system that initializes a 3d or 2d camera bundle.
+- [ ] Create an enlarge snake event, move that logic outside of the apply eat food system
+- [ ] Add check for random food spawn not within the cells that the snake is occupying
