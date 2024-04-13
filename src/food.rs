@@ -91,7 +91,7 @@ fn apply_eat_food(
     mut snake_direction_queue: ResMut<SnakeDirectionQueue>,
 ) {
     for &FoodEvent { entity } in food_event_reader.read() {
-        // @info: food eaten, despawn food
+        //  NOTE: food eaten, despawn food
         commands.entity(entity).despawn();
         let tail_direction = snake_direction_queue.directions.back().unwrap().clone();
         snake_direction_queue.directions.push_back(tail_direction);

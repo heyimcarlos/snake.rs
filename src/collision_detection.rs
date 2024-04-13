@@ -28,12 +28,12 @@ fn collision_detection(
         return;
     };
 
-    // if the snake hits a wall
+    //  NOTE:the snake hits a wall
     if head_pos.x < 0 || head_pos.y < 0 || head_pos.x == board.size || head_pos.y == board.size {
         next_state.set(GameState::GameOver);
     }
 
-    // if the snake hits itself
+    // NOTE: the snake hits itself
     for segment_pos in snake_body_query.iter() {
         if head_pos == segment_pos {
             next_state.set(GameState::GameOver);

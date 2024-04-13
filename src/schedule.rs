@@ -27,11 +27,5 @@ impl Plugin for SchedulePlugin {
                 .chain()
                 .run_if(in_state(GameState::InGame)),
         );
-        // .add_systems(
-        //     Update,
-        //     apply_deferred
-        //         .after(InGameSet::DespawnEntities)
-        //         .before(InGameSet::UserInput),
-        // );
     }
 }

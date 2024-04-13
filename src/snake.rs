@@ -17,7 +17,7 @@ pub struct SnakeHeadDirection {
 
 impl SnakeHeadDirection {
     pub fn queue_direction(&mut self, new_direction: Direction) {
-        // @info: check that the new direction is not the opposite of the last direction, and that we don't have more than 2 directions queued
+        // NOTE: check that the new direction is not the opposite of the last direction, and that we don't have more than 2 directions queued
         if let Some(&last_direction) = self.directions.last() {
             if new_direction != last_direction.opposite() && self.directions.len() < 3 {
                 self.directions.push(new_direction);
@@ -114,7 +114,7 @@ fn load_snake_direction_queue(mut snake_direction_queue: ResMut<SnakeDirectionQu
 fn spawn_snake(mut commands: Commands, board: Res<Board>, assets: Res<ImageAssets>) {
     let start_pos = snake_starting_position(board.size);
 
-    // load snake head
+    // NOTE: load snake head
     commands.spawn((
         SpriteSheetBundle {
             atlas: TextureAtlas {
@@ -215,7 +215,7 @@ fn movement_controls(
         })
         .collect();
 
-    // Iterate through the collected keys and queue valid directions
+    //  NOTE: Iterate through the collected keys and queue valid directions
     for key in keys_pressed {
         let direction = match key {
             KeyCode::ArrowUp => Direction::Up,
@@ -224,7 +224,7 @@ fn movement_controls(
             KeyCode::ArrowRight => Direction::Right,
             _ => continue,
         };
-        // @info: new head direction to be queued
+        //  NOTE: new head direction to be queued
         snake_direction.queue_direction(direction);
     }
 }
@@ -246,8 +246,7 @@ fn update_position(
         return;
     };
 
-    // @info: check if there's a queued direction and update the current direction
-    // also dequeue the first direction
+    //  NOTE: check if there's a queued direction and update the current direction also dequeue the first direction
     if let Some(new_direction) = snake_head_direction_input.directions.get(0) {
         snake_head_direction_input.current = *new_direction;
         snake_head_direction_input.directions.remove(0);
@@ -278,8 +277,7 @@ fn update_snake_sprite(
     mut snake_query: Query<(&Position, &mut TextureAtlas, Entity), With<SnakeSegment>>,
     direction_queue: Res<SnakeDirectionQueue>,
 ) {
-    // @info: zip an immutable iter from directions and a mutable for the snake_query which
-    // contains the sprite.
+    //  NOTE: zip an immutable iter from directions and a mutable for the snake_query which contains the sprite.
     for (i, (direction, (_, mut sprite, _))) in direction_queue
         .directions
         .iter()
@@ -294,8 +292,7 @@ fn update_snake_sprite(
                 Direction::Right => SpritePart::HeadRight as usize,
             }
         } else if i == direction_queue.directions.len() - 1 {
-            // @info: use the segment of the snake that's previous to the snake tail to decide the
-            // tails direction
+            //  NOTE: use the segment of the snake that's previous to the snake tail to decide the tails direction
             let prev_direction = direction_queue.directions[i - 1];
             match prev_direction {
                 Direction::Up => SpritePart::TailUp as usize,
