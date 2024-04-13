@@ -1,5 +1,6 @@
 mod asset_loader;
 mod board;
+mod camera;
 mod collision_detection;
 mod colors;
 mod despawn;
@@ -12,6 +13,7 @@ mod util;
 use asset_loader::AssetLoaderPlugin;
 use bevy::prelude::*;
 use board::BoardPlugin;
+use camera::CameraPlugin;
 use collision_detection::CollisionDetectionPlugin;
 use despawn::DespawnPlugin;
 use food::FoodPlugin;
@@ -24,12 +26,8 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.52, 0.73, 0.17)))
         .add_plugins(DefaultPlugins)
         .add_systems(Update, bevy::window::close_on_esc)
-        .insert_resource(AmbientLight {
-            color: Color::default(),
-            brightness: 1000.0,
-        })
+        .add_plugins(CameraPlugin)
         .add_plugins(AssetLoaderPlugin)
-        .add_systems(Startup, setup)
         .add_plugins(BoardPlugin)
         .add_plugins(FoodPlugin)
         .add_plugins(SnakePlugin)
@@ -38,8 +36,4 @@ fn main() {
         .add_plugins(SchedulePlugin)
         .add_plugins(StatePlugin)
         .run();
-}
-
-fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
 }
