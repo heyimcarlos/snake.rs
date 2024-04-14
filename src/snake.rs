@@ -17,7 +17,7 @@ pub struct SnakeHeadDirection {
 
 impl SnakeHeadDirection {
     pub fn queue_direction(&mut self, new_direction: Direction) {
-        // NOTE: check that the new direction is not the opposite of the last direction, and that we don't have more than 2 directions queued
+        // NOTE: check that the new direction is not the opposite of the last direction, and that we don't have more than 2 directions queued.
         if let Some(&last_direction) = self.directions.last() {
             if new_direction != last_direction.opposite() && self.directions.len() < 3 {
                 self.directions.push(new_direction);
