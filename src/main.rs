@@ -8,6 +8,7 @@ mod food;
 mod schedule;
 mod snake;
 mod state;
+mod ui;
 mod util;
 
 use asset_loader::AssetLoaderPlugin;
@@ -20,11 +21,13 @@ use food::FoodPlugin;
 use schedule::SchedulePlugin;
 use snake::SnakePlugin;
 use state::StatePlugin;
+use ui::GameUiPlugin;
 
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.52, 0.73, 0.17)))
         .add_plugins(DefaultPlugins)
+        .add_plugins(GameUiPlugin)
         .add_systems(Update, bevy::window::close_on_esc)
         .add_plugins(CameraPlugin)
         .add_plugins(AssetLoaderPlugin)
