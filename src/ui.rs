@@ -4,16 +4,10 @@ use bevy_egui::{
     EguiContexts, EguiPlugin,
 };
 
-#[derive(States, Debug, Default, Clone, Eq, PartialEq, Hash)]
-pub enum MenuState {
-    #[default]
-    Main,
-    Settings,
-}
+use crate::state::{GameState, MenuState};
 
 struct Images {
     play_icon: Handle<Image>,
-    settings_icon: Handle<Image>,
 }
 
 impl FromWorld for Images {
@@ -21,7 +15,6 @@ impl FromWorld for Images {
         let asset_server = world.get_resource_mut::<AssetServer>().unwrap();
         Self {
             play_icon: asset_server.load("play.png"),
-            settings_icon: asset_server.load("settings.png"),
         }
     }
 }
@@ -31,53 +24,30 @@ pub struct GameUiPlugin;
 impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EguiPlugin)
-            .init_state::<MenuState>()
-            .add_systems(Update, setup_ui);
+            .add_systems(Update, update_menu.run_if(in_state(MenuState::On)));
     }
 }
 
-fn setup_ui(
+fn update_menu(
     mut contexts: EguiContexts,
-    menu_state: Res<State<MenuState>>,
+    mut next_menu_state: ResMut<NextState<MenuState>>,
+    game_state: Res<State<GameState>>,
+    mut next_game_state: ResMut<NextState<GameState>>,
     images: Local<Images>,
-    mut is_initialized: Local<bool>,
-    mut window: Query<&mut Window, With<PrimaryWindow>>,
+    window: Query<&mut Window, With<PrimaryWindow>>,
 ) {
-    let Ok(mut window) = window.get_single_mut() else {
+    let Ok(window) = window.get_single() else {
         return;
     };
 
-    egui::TopBottomPanel::top("main menu top").show(contexts.ctx_mut(), |ui| {
-        ui.label(
-            egui::RichText::new("Game By ")
-                .color(egui::Color32::GRAY)
-                .font(egui::FontId::monospace(24.0)),
-        );
-
-        //  NOTE: add a new bar to the menu
-        // egui::menu::bar(ui, |ui| {
-        //     egui::menu::menu_button(ui, "File", |ui| {
-        //         if ui.button("Quit").clicked() {
-        //             std::process::exit(0);
-        //         }
-        //     })
-        // });
-    });
-
-    //  NOTE: Covers the reamining space, including the game view.
-    // egui::CentralPanel::default().show(contexts.ctx_mut(), |ui| {
-    //     ui.label("central panel");
-    // });
-
     let play_icon = contexts.add_image(images.play_icon.clone());
-    let settings_icon = contexts.add_image(images.settings_icon.clone());
 
-    egui::Window::new("")
+    egui::Window::new("button-group")
         .title_bar(false)
         .default_size(egui::vec2(300.0, 600.0))
         .default_pos(egui::pos2(
             (window.width() - 300.0) / 2.0,
-            (window.height() - 300.0) / 2.0,
+            window.height() / 2.0,
         ))
         .movable(false)
         .collapsible(false)
@@ -97,7 +67,6 @@ fn setup_ui(
             shadow: Shadow {
                 color: egui::Color32::from_rgba_premultiplied(0, 0, 0, 150),
                 spread: window.width(),
-                blur: 1000.0,
                 ..Default::default()
             },
             ..Default::default()
@@ -125,26 +94,11 @@ fn setup_ui(
                     )
                     .clicked()
                 {
-                    println!("Playing game..");
-                }
-                if ui
-                    .add(
-                        egui::Button::image_and_text(
-                            egui::widgets::Image::new(egui::load::SizedTexture::new(
-                                settings_icon,
-                                [25.0, 25.0],
-                            )),
-                            egui::RichText::new("Settings")
-                                .color(egui::Color32::WHITE)
-                                .font(egui::FontId::monospace(20.0)),
-                        )
-                        .min_size(egui::vec2(200., 0.))
-                        .rounding(8.0)
-                        .fill(egui::Color32::from_hex("#15c").unwrap()),
-                    )
-                    .clicked()
-                {
-                    println!("Settings...");
+                    match game_state.get() {
+                        GameState::Paused => next_game_state.set(GameState::Playing),
+                        _ => (),
+                    }
+                    next_menu_state.set(MenuState::Off);
                 }
                 if ui
                     .add(
@@ -163,26 +117,5 @@ fn setup_ui(
                     std::process::exit(0);
                 }
             });
-            // egui::menu::bar(ui, |ui| {
-            //     if ui.button("▶ Play").clicked() {
-            //         println!("Playing game..");
-            //     }
-            // });
-
-            //  NOTE: button nesting
-            // ui.menu_button("My menu", |ui| {
-            //     ui.menu_button("My sub-menu", |ui| {
-            //         if ui.button("Close the menu").clicked() {
-            //             ui.close_menu();
-            //         }
-            //     });
-            // });
-
-            // if let Some(button_style) = ui.style_mut().text_styles.get_mut(&egui::TextStyle::Button)
-            // {
-            //     *button_style = egui::FontId::new(20.0, egui::FontFamily::Monospace);
-            //     // *button_style = egui::style
-            // }
-            // Image
         });
 }
