@@ -30,5 +30,5 @@
 - [ ] Create an enlarge snake event, move that logic outside of the apply eat food system
 - [ ] Add check for random food spawn not within the cells that the snake is occupying
 - [ ] Add game UI with `bevy_egui`
-  - [ ] Load images for button (if needed)
+  - [x] Load images for button
   - [ ] Scoreboard
