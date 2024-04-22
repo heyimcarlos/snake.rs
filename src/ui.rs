@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
 #[derive(States, Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -38,13 +38,12 @@ fn setup_ui(
     menu_state: Res<State<MenuState>>,
     images: Local<Images>,
     mut is_initialized: Local<bool>,
+    mut window: Query<&mut Window, With<PrimaryWindow>>,
 ) {
-    // let mut style = contexts.ctx_mut().style().clone();
+    let Ok(mut window) = window.get_single_mut() else {
+        return;
+    };
 
-    // style.spacing.button_padding.x = 10.0;
-
-    // contexts.ctx_mut().set_style(style);
-    // menu_state.
     egui::TopBottomPanel::top("main menu top").show(contexts.ctx_mut(), |ui| {
         ui.label(
             egui::RichText::new("Game By ")
@@ -74,14 +73,18 @@ fn setup_ui(
     let play_icon = contexts.add_image(images.play_icon.clone());
     let settings_icon = contexts.add_image(images.settings_icon.clone());
 
-    egui::Window::new("")
+    println!("{}", window.height());
+    egui::Window::new("Menu")
         .default_size(egui::vec2(300.0, 600.0))
+        .default_pos(egui::pos2(
+            (window.width() - 300.0) / 2.0,
+            (window.height() - 300.0) / 2.0,
+        ))
         .movable(false)
         .collapsible(false)
         .interactable(false)
         .resizable(false)
         .frame(egui::Frame {
-            // fill: egui::Color32::TRANSPARENT,
             fill: egui::Color32::from_rgba_premultiplied(0, 0, 0, 150),
             stroke: egui::Stroke::new(2.0, egui::Color32::WHITE),
             rounding: egui::Rounding::same(10.0),
@@ -96,7 +99,64 @@ fn setup_ui(
         .show(contexts.ctx_mut(), |ui| {
             ui.spacing_mut().icon_spacing = 50.;
             ui.style_mut().spacing.button_padding = egui::Vec2::new(15., 10.);
-            ui.label("Welcome to Snake!");
+
+            //  NOTE: Menu Buttons
+            ui.vertical_centered(|ui| {
+                if ui
+                    .add(
+                        egui::Button::image_and_text(
+                            egui::widgets::Image::new(egui::load::SizedTexture::new(
+                                play_icon,
+                                [25.0, 25.0],
+                            )),
+                            egui::RichText::new("Play")
+                                .color(egui::Color32::WHITE)
+                                .font(egui::FontId::monospace(20.0)),
+                        )
+                        .min_size(egui::vec2(200., 0.))
+                        .rounding(8.0)
+                        .fill(egui::Color32::from_hex("#15c").unwrap()),
+                    )
+                    .clicked()
+                {
+                    println!("Playing game..");
+                }
+                if ui
+                    .add(
+                        egui::Button::image_and_text(
+                            egui::widgets::Image::new(egui::load::SizedTexture::new(
+                                settings_icon,
+                                [25.0, 25.0],
+                            )),
+                            egui::RichText::new("Settings")
+                                .color(egui::Color32::WHITE)
+                                .font(egui::FontId::monospace(20.0)),
+                        )
+                        .min_size(egui::vec2(200., 0.))
+                        .rounding(8.0)
+                        .fill(egui::Color32::from_hex("#15c").unwrap()),
+                    )
+                    .clicked()
+                {
+                    println!("Settings...");
+                }
+                if ui
+                    .add(
+                        egui::Button::new(
+                            egui::RichText::new("Exit")
+                                .color(egui::Color32::WHITE)
+                                .font(egui::FontId::monospace(20.0)),
+                        )
+                        .min_size(egui::vec2(200., 0.))
+                        .rounding(8.0)
+                        .fill(egui::Color32::from_hex("#15c").unwrap()),
+                    )
+                    .clicked()
+                {
+                    println!("exiting...");
+                    std::process::exit(0);
+                }
+            });
             // egui::menu::bar(ui, |ui| {
             //     if ui.button("▶ Play").clicked() {
             //         println!("Playing game..");
@@ -118,46 +178,5 @@ fn setup_ui(
             //     // *button_style = egui::style
             // }
             // Image
-
-            //  NOTE: Menu Buttons
-            if ui
-                .add(
-                    egui::Button::image_and_text(
-                        egui::widgets::Image::new(egui::load::SizedTexture::new(
-                            play_icon,
-                            [25.0, 25.0],
-                        )),
-                        egui::RichText::new("Play")
-                            .color(egui::Color32::WHITE)
-                            .font(egui::FontId::monospace(20.0)),
-                    )
-                    .min_size(egui::vec2(200., 0.))
-                    .rounding(8.0)
-                    .fill(egui::Color32::from_hex("#15c").unwrap()),
-                )
-                .clicked()
-            {
-                println!("Playing game..");
-            }
-            if ui
-                .add(
-                    egui::Button::image_and_text(
-                        egui::widgets::Image::new(egui::load::SizedTexture::new(
-                            settings_icon,
-                            [25.0, 25.0],
-                        )),
-                        egui::RichText::new("Settings")
-                            .color(egui::Color32::WHITE)
-                            .font(egui::FontId::monospace(20.0)),
-                    )
-                    .min_size(egui::vec2(200., 0.))
-                    .rounding(8.0)
-                    .fill(egui::Color32::from_hex("#15c").unwrap()),
-                )
-                .clicked()
-            {
-                println!("Exiting game...");
-                std::process::exit(0);
-            }
         });
 }
