@@ -1,5 +1,8 @@
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_egui::{
+    egui::{self, epaint::Shadow},
+    EguiContexts, EguiPlugin,
+};
 
 #[derive(States, Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub enum MenuState {
@@ -66,15 +69,11 @@ fn setup_ui(
     //     ui.label("central panel");
     // });
 
-    // if !*is_initialized {
-    //     *is_initialized = true;
-    // }
-
     let play_icon = contexts.add_image(images.play_icon.clone());
     let settings_icon = contexts.add_image(images.settings_icon.clone());
 
-    println!("{}", window.height());
-    egui::Window::new("Menu")
+    egui::Window::new("")
+        .title_bar(false)
         .default_size(egui::vec2(300.0, 600.0))
         .default_pos(egui::pos2(
             (window.width() - 300.0) / 2.0,
@@ -85,14 +84,21 @@ fn setup_ui(
         .interactable(false)
         .resizable(false)
         .frame(egui::Frame {
-            fill: egui::Color32::from_rgba_premultiplied(0, 0, 0, 150),
-            stroke: egui::Stroke::new(2.0, egui::Color32::WHITE),
-            rounding: egui::Rounding::same(10.0),
-            inner_margin: egui::Margin {
-                left: 10.0,
-                right: 10.0,
-                top: 10.0,
-                bottom: 10.0,
+            fill: egui::Color32::TRANSPARENT,
+            // fill: egui::Color32::from_rgba_premultiplied(0, 0, 0, 150),
+            // stroke: egui::Stroke::new(2.0, egui::Color32::WHITE),
+            // rounding: egui::Rounding::same(10.0),
+            // inner_margin: egui::Margin {
+            //     left: 10.0,
+            //     right: 10.0,
+            //     top: 10.0,
+            //     bottom: 10.0,
+            // },
+            shadow: Shadow {
+                color: egui::Color32::from_rgba_premultiplied(0, 0, 0, 150),
+                spread: window.width(),
+                blur: 1000.0,
+                ..Default::default()
             },
             ..Default::default()
         })
