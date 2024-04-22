@@ -28,7 +28,7 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.52, 0.73, 0.17)))
         .add_plugins(DefaultPlugins)
         .add_plugins(GameUiPlugin)
-        .add_systems(Update, bevy::window::close_on_esc)
+        // .add_systems(Update, bevy::window::close_on_esc)
         .add_plugins(CameraPlugin)
         .add_plugins(AssetLoaderPlugin)
         .add_plugins(BoardPlugin)
