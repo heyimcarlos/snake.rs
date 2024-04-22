@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
-use crate::colors::COLORS;
-
 #[derive(States, Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub enum MenuState {
     #[default]
