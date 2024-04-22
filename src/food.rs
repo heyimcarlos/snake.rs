@@ -16,7 +16,7 @@ pub struct FoodPlugin;
 
 impl Plugin for FoodPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::BeforeGame), spawn_food)
+        app.add_systems(OnEnter(GameState::NewGame), spawn_food)
             .add_systems(
                 Update,
                 (handle_eat_food, apply_eat_food)

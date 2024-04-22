@@ -26,7 +26,13 @@ use ui::GameUiPlugin;
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.52, 0.73, 0.17)))
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                prevent_default_event_handling: false,
+                ..Default::default()
+            }),
+            ..Default::default()
+        }))
         .add_plugins(GameUiPlugin)
         // .add_systems(Update, bevy::window::close_on_esc)
         .add_plugins(CameraPlugin)
