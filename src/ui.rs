@@ -4,7 +4,10 @@ use bevy_egui::{
     EguiContexts, EguiPlugin,
 };
 
-use crate::state::{GameState, MenuState};
+use crate::{
+    score::Score,
+    state::{GameState, MenuState},
+};
 
 struct Images {
     play_icon: Handle<Image>,
@@ -25,32 +28,32 @@ impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EguiPlugin)
             .add_systems(Update, update_menu.run_if(in_state(MenuState::On)))
-            .add_systems(Update, top_menu);
+            .add_systems(Update, update_score_ui);
     }
 }
 
-fn top_menu(
+fn update_score_ui(
     mut contexts: EguiContexts,
     // mut next_menu_state: ResMut<NextState<MenuState>>,
     // game_state: Res<State<GameState>>,
     // mut next_game_state: ResMut<NextState<GameState>>,
     // images: Local<Images>,
     // window: Query<&mut Window, With<PrimaryWindow>>,
+    score: Res<Score>,
 ) {
-    TopBottomPanel::top("hi")
-        .min_height(50.)
-        .frame(egui::Frame {
-            fill: egui::Color32::from_hex("#4a752c").unwrap(),
-            // inner_margin: egui::Margin {
-            //     left: 10.0,
-            //     right: 10.0,
-            //     top: 10.0,
-            //     bottom: 10.0,
-            // },
-            ..Default::default()
-        })
+    egui::Area::new("hi".into())
+        .anchor(egui::Align2::LEFT_TOP, (0., 0.))
         .show(contexts.ctx_mut(), |ui| {
-            ui.label("Score");
+            ui.label(
+                egui::RichText::new(format!("{}", score.score))
+                    .color(egui::Color32::WHITE)
+                    .font(egui::FontId::monospace(50.0)),
+            );
+            ui.label(
+                egui::RichText::new(format!("{}", score.highest_score))
+                    .color(egui::Color32::WHITE)
+                    .font(egui::FontId::monospace(50.0)),
+            );
         });
 }
 
@@ -67,6 +70,22 @@ fn update_menu(
     };
 
     let play_icon = contexts.add_image(images.play_icon.clone());
+
+    TopBottomPanel::top("hi")
+        .min_height(50.)
+        .frame(egui::Frame {
+            fill: egui::Color32::from_hex("#4a752c").unwrap(),
+            // inner_margin: egui::Margin {
+            //     left: 10.0,
+            //     right: 10.0,
+            //     top: 10.0,
+            //     bottom: 10.0,
+            // },
+            ..Default::default()
+        })
+        .show(contexts.ctx_mut(), |ui| {
+            ui.label("Score");
+        });
 
     egui::Window::new("button-group")
         .title_bar(false)

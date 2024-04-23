@@ -19,7 +19,9 @@ impl Default for Score {
 
 impl Score {
     pub fn game_over(&mut self) {
-        self.highest_score = self.score;
+        if self.score > self.highest_score {
+            self.highest_score = self.score;
+        }
         self.score = 0;
     }
 }

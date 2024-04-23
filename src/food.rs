@@ -97,9 +97,6 @@ fn apply_eat_food(
         //  NOTE: food eaten, despawn food
         commands.entity(entity).despawn();
 
-        //  NOTE: Increase score
-        game_score.score += 1;
-
         //  TODO: Move snake enlargement on eat somewhere else.
         let tail_direction = snake_direction_queue.directions.back().unwrap().clone();
         snake_direction_queue.directions.push_back(tail_direction);
@@ -134,6 +131,9 @@ fn apply_eat_food(
             SnakeSegment,
             Position::from(tail_pos),
         ));
+
+        //  NOTE: Increase score
+        game_score.score += 1;
 
         //  TODO: Food needs to spawn in a board position where the snake isn't at.
         let food_pos = food_position(board.size);
