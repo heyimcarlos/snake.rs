@@ -4,6 +4,7 @@ use crate::{
     asset_loader::{ImageAssets, SpritePart},
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
+    score::Score,
     snake::{Direction, Position, SnakeDirectionQueue, SnakeHead, SnakeSegment},
     state::GameState,
     util::food_position,
@@ -79,6 +80,7 @@ fn handle_eat_food(
 
     if head_transform.translation == food_tranform.translation {
         food_event_write.send(FoodEvent::new(food));
+        // do the scoreboard event send here?
     }
 }
 
@@ -89,10 +91,16 @@ fn apply_eat_food(
     board: Res<Board>,
     assets: Res<ImageAssets>,
     mut snake_direction_queue: ResMut<SnakeDirectionQueue>,
+    mut game_score: ResMut<Score>,
 ) {
     for &FoodEvent { entity } in food_event_reader.read() {
         //  NOTE: food eaten, despawn food
         commands.entity(entity).despawn();
+
+        //  NOTE: Increase score
+        game_score.score += 1;
+
+        //  TODO: Move snake enlargement on eat somewhere else.
         let tail_direction = snake_direction_queue.directions.back().unwrap().clone();
         snake_direction_queue.directions.push_back(tail_direction);
 
@@ -127,6 +135,7 @@ fn apply_eat_food(
             Position::from(tail_pos),
         ));
 
+        //  TODO: Food needs to spawn in a board position where the snake isn't at.
         let food_pos = food_position(board.size);
         commands.spawn((
             SpriteSheetBundle {

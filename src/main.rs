@@ -6,6 +6,7 @@ mod colors;
 mod despawn;
 mod food;
 mod schedule;
+mod score;
 mod snake;
 mod state;
 mod ui;
@@ -19,6 +20,7 @@ use collision_detection::CollisionDetectionPlugin;
 use despawn::DespawnPlugin;
 use food::FoodPlugin;
 use schedule::SchedulePlugin;
+use score::ScorePlugin;
 use snake::SnakePlugin;
 use state::StatePlugin;
 use ui::GameUiPlugin;
@@ -40,6 +42,7 @@ fn main() {
         .add_plugins(CameraPlugin)
         .add_plugins(AssetLoaderPlugin)
         .add_plugins(BoardPlugin)
+        .add_plugins(ScorePlugin)
         .add_plugins(FoodPlugin)
         .add_plugins(SnakePlugin)
         .add_plugins(CollisionDetectionPlugin)
