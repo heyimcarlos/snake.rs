@@ -1,16 +1,19 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::{
-    egui::{self, epaint::Shadow, TopBottomPanel},
+    egui::{self, epaint::Shadow, Pos2, TopBottomPanel},
     EguiContexts, EguiPlugin,
 };
 
 use crate::{
+    asset_loader::{ImageAssets, SpritePart},
     score::Score,
     state::{GameState, MenuState},
 };
 
 struct Images {
     play_icon: Handle<Image>,
+    apple_icon: Handle<Image>,
+    // test:
 }
 
 impl FromWorld for Images {
@@ -18,6 +21,7 @@ impl FromWorld for Images {
         let asset_server = world.get_resource_mut::<AssetServer>().unwrap();
         Self {
             play_icon: asset_server.load("play.png"),
+            apple_icon: asset_server.load("snake-graphics.png"),
         }
     }
 }
@@ -28,32 +32,62 @@ impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EguiPlugin)
             .add_systems(Update, update_menu.run_if(in_state(MenuState::On)))
-            .add_systems(Update, update_score_ui);
+            .add_systems(Update, update_top_bar);
     }
 }
 
-fn update_score_ui(
+fn update_top_bar(
     mut contexts: EguiContexts,
-    // mut next_menu_state: ResMut<NextState<MenuState>>,
-    // game_state: Res<State<GameState>>,
-    // mut next_game_state: ResMut<NextState<GameState>>,
-    // images: Local<Images>,
-    // window: Query<&mut Window, With<PrimaryWindow>>,
     score: Res<Score>,
+    images: Local<Images>,
+    texture_atlas: Res<Assets<TextureAtlasLayout>>,
+    assets: Res<ImageAssets>,
 ) {
-    egui::Area::new("hi".into())
-        .anchor(egui::Align2::LEFT_TOP, (0., 0.))
+    let apple_icon = contexts.add_image(images.apple_icon.clone());
+    TopBottomPanel::top("hi")
+        .min_height(50.)
+        .show_separator_line(true)
+        .frame(egui::Frame {
+            fill: egui::Color32::from_hex("#4a752c").unwrap(),
+            inner_margin: egui::Margin {
+                left: 10.0,
+                right: 10.0,
+                top: 10.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        })
         .show(contexts.ctx_mut(), |ui| {
-            ui.label(
-                egui::RichText::new(format!("{}", score.score))
-                    .color(egui::Color32::WHITE)
-                    .font(egui::FontId::monospace(50.0)),
-            );
-            ui.label(
-                egui::RichText::new(format!("{}", score.highest_score))
-                    .color(egui::Color32::WHITE)
-                    .font(egui::FontId::monospace(50.0)),
-            );
+            ui.horizontal_top(|ui| {
+                if let Some(atlas) = texture_atlas.get(&assets.sprite_sheet_layout) {
+                    let apple_rect = atlas.textures[SpritePart::Apple as usize].clone();
+                    let uv: egui::Rect = egui::Rect::from_min_max(
+                        egui::pos2(
+                            apple_rect.min.x / atlas.size.x,
+                            apple_rect.min.y / atlas.size.y,
+                        ),
+                        egui::pos2(
+                            apple_rect.max.x / atlas.size.x,
+                            apple_rect.max.y / atlas.size.y,
+                        ),
+                    );
+
+                    ui.add(
+                        egui::Image::new(egui::load::SizedTexture::new(apple_icon, [30.0, 30.0]))
+                            .uv(uv),
+                    );
+                }
+                ui.label(
+                    egui::RichText::new(format!("{}", score.value))
+                        .color(egui::Color32::WHITE)
+                        .font(egui::FontId::monospace(20.0)),
+                );
+                // ui.label(
+                //     egui::RichText::new(format!("{}", score.highest))
+                //         .color(egui::Color32::WHITE)
+                //         .font(egui::FontId::monospace(30.0)),
+                // );
+            });
         });
 }
 
@@ -70,22 +104,6 @@ fn update_menu(
     };
 
     let play_icon = contexts.add_image(images.play_icon.clone());
-
-    TopBottomPanel::top("hi")
-        .min_height(50.)
-        .frame(egui::Frame {
-            fill: egui::Color32::from_hex("#4a752c").unwrap(),
-            // inner_margin: egui::Margin {
-            //     left: 10.0,
-            //     right: 10.0,
-            //     top: 10.0,
-            //     bottom: 10.0,
-            // },
-            ..Default::default()
-        })
-        .show(contexts.ctx_mut(), |ui| {
-            ui.label("Score");
-        });
 
     egui::Window::new("button-group")
         .title_bar(false)
