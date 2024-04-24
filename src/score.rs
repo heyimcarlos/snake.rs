@@ -4,25 +4,25 @@ pub struct ScorePlugin;
 
 #[derive(Resource, Debug)]
 pub struct Score {
-    pub score: i32,
-    pub highest_score: i32,
+    pub value: i32,
+    pub highest: i32,
 }
 
 impl Default for Score {
     fn default() -> Self {
         Self {
-            score: 0,
-            highest_score: 0,
+            value: 0,
+            highest: 0,
         }
     }
 }
 
 impl Score {
     pub fn game_over(&mut self) {
-        if self.score > self.highest_score {
-            self.highest_score = self.score;
+        if self.value > self.highest {
+            self.highest = self.value;
         }
-        self.score = 0;
+        self.value = 0;
     }
 }
 

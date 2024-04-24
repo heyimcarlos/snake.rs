@@ -133,7 +133,7 @@ fn apply_eat_food(
         ));
 
         //  NOTE: Increase score
-        game_score.score += 1;
+        game_score.value += 1;
 
         //  TODO: Food needs to spawn in a board position where the snake isn't at.
         let food_pos = food_position(board.size);
