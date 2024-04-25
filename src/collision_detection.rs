@@ -48,7 +48,6 @@ fn collision_detection(
     // food_query: Query<(&Transform, Entity), With<Food>>,
     board: Res<Board>,
     mut next_state: ResMut<NextState<GameState>>,
-    mut game_score: ResMut<Score>,
 ) {
     let Ok((head_pos, _)) = snake_head_query.get_single() else {
         return;
@@ -57,7 +56,6 @@ fn collision_detection(
     //  NOTE:the snake hits a wall
     if head_pos.x < 0 || head_pos.y < 0 || head_pos.x == board.size || head_pos.y == board.size {
         next_state.set(GameState::GameOver);
-        game_score.game_over();
         // CollisionEvent::new(head_entity, None);
     }
 
@@ -65,7 +63,6 @@ fn collision_detection(
     for (segment_pos, _) in snake_body_query.iter() {
         if head_pos == segment_pos {
             next_state.set(GameState::GameOver);
-            game_score.game_over();
             // CollisionEvent::new(head_entity, Some(segment_entity));
         }
     }
