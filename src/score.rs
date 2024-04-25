@@ -5,6 +5,7 @@ pub struct ScorePlugin;
 #[derive(Resource, Debug)]
 pub struct Score {
     pub value: i32,
+    pub previous: i32,
     pub highest: i32,
 }
 
@@ -12,6 +13,7 @@ impl Default for Score {
     fn default() -> Self {
         Self {
             value: 0,
+            previous: 0,
             highest: 0,
         }
     }
