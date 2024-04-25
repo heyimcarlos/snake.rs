@@ -25,7 +25,7 @@ impl Plugin for SchedulePlugin {
                 InGameSet::EntityUpdates,
             )
                 .chain()
-                .run_if(in_state(GameState::InGame)),
+                .run_if(in_state(GameState::Playing)),
         );
     }
 }

@@ -93,8 +93,8 @@ impl Plugin for SnakePlugin {
             .insert_resource(MovementTimer {
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
             })
-            .add_systems(OnEnter(GameState::BeforeGame), spawn_snake)
-            .add_systems(OnEnter(GameState::BeforeGame), load_snake_direction_queue)
+            .add_systems(OnEnter(GameState::NewGame), spawn_snake)
+            .add_systems(OnEnter(GameState::NewGame), load_snake_direction_queue)
             .add_systems(Update, movement_controls.in_set(InGameSet::UserInput))
             .add_systems(
                 Update,
