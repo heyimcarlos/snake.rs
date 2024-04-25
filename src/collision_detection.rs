@@ -3,7 +3,6 @@ use bevy::prelude::*;
 use crate::{
     board::Board,
     schedule::InGameSet,
-    score::Score,
     snake::{Position, SnakeHead, SnakeSegment},
     state::GameState,
 };

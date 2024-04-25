@@ -13,7 +13,7 @@ mod ui;
 mod util;
 
 use asset_loader::AssetLoaderPlugin;
-use bevy::{prelude::*, window::WindowResolution};
+use bevy::{asset::AssetMetaCheck, prelude::*, window::WindowResolution};
 use board::BoardPlugin;
 use camera::CameraPlugin;
 use collision_detection::CollisionDetectionPlugin;
@@ -27,9 +27,11 @@ use ui::GameUiPlugin;
 
 fn main() {
     App::new()
+        .insert_resource(AssetMetaCheck::Never)
         .insert_resource(ClearColor(Color::hex("#578a34").unwrap()))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
+                // canvas: Some("#snake-canvas".into()),
                 prevent_default_event_handling: false,
                 resizable: false,
                 resolution: WindowResolution::new(650.0, 750.0),
