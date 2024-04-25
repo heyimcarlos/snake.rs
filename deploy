@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Exit if any command fails
+set -e
+
+# Define directories
+BUILD_DIR="./target/wasm32-unknown-unknown/release"
+OUT_DIR="./out/"  # Directory to store output for deployment
+ASSETS_DIR="./assets"  # Location of your game's assets
+DEPLOY_DIR="/path/to/your/webserver/directory"  # Path to your web server's public directory
+
+# Build the Rust project
+echo "Building the Rust project for WebAssembly..."
+cargo build --release --target wasm32-unknown-unknown
+
+# Run wasm-bindgen
+echo "Running wasm-bindgen..."
+wasm-bindgen "$BUILD_DIR/snake.wasm" --out-dir "$OUT_DIR" --no-typescript --target web --out-name "snake"
+
+# Copy assets
+echo "Copying assets..."
+cp -r "$ASSETS_DIR" "$OUT_DIR"
+
+echo "Deployment complete!"
