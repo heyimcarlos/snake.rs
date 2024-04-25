@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::state::GameState;
+
 pub struct ScorePlugin;
 
 #[derive(Resource, Debug)]
@@ -24,14 +26,20 @@ impl Score {
         if self.value > self.highest {
             self.highest = self.value;
         }
+        self.previous = self.value;
         self.value = 0;
     }
 }
 
 impl Plugin for ScorePlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Score>();
+        app.init_resource::<Score>()
+            .add_systems(OnEnter(GameState::GameOver), update_score);
     }
+}
+
+fn update_score(mut game_score: ResMut<Score>) {
+    game_score.game_over();
 }
 
 // pub struct ScoreEvent {
