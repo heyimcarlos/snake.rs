@@ -29,6 +29,6 @@
 - [x] Camera plugin: `spawn_camera` system that initializes a 3d or 2d camera bundle.
 - [ ] Create an enlarge snake event, move that logic outside of the apply eat food system
 - [ ] Add check for random food spawn not within the cells that the snake is occupying
-- [ ] Add game UI with `bevy_egui`
+- [x] Add game UI with `bevy_egui`
   - [x] Load images for button
-  - [ ] Scoreboard
+  - [x] Scoreboard
