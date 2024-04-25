@@ -171,7 +171,7 @@ fn update_menu(
                                 }
                                 ui.add_space(5.0);
                                 ui.label(
-                                    egui::RichText::new(format!("{}", score.value))
+                                    egui::RichText::new(format!("{}", score.previous))
                                         .color(egui::Color32::WHITE)
                                         .font(egui::FontId::monospace(20.0)),
                                 );
@@ -187,7 +187,7 @@ fn update_menu(
                                     [40.0, 40.0],
                                 )));
                                 ui.label(
-                                    egui::RichText::new(format!("{}", score.value))
+                                    egui::RichText::new(format!("{}", score.highest))
                                         .color(egui::Color32::WHITE)
                                         .font(egui::FontId::monospace(20.0)),
                                 );
