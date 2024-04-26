@@ -231,22 +231,22 @@ fn update_menu(
                             next_menu_state.set(MenuState::Off);
                         }
 
-                        if ui
-                            .add(
-                                egui::Button::new(
-                                    egui::RichText::new("Exit")
-                                        .color(egui::Color32::WHITE)
-                                        .font(egui::FontId::monospace(20.0)),
-                                )
-                                .min_size(egui::vec2(300., 0.))
-                                .rounding(8.0)
-                                .fill(egui::Color32::from_hex("#15c").unwrap()),
-                            )
-                            .clicked()
-                        {
-                            println!("exiting...");
-                            std::process::exit(0);
-                        }
+                        // if ui
+                        //     .add(
+                        // egui::Button::new(
+                        //     egui::RichText::new("Exit")
+                        //         .color(egui::Color32::WHITE)
+                        //         .font(egui::FontId::monospace(20.0)),
+                        // )
+                        // .min_size(egui::vec2(300., 0.))
+                        // .rounding(8.0)
+                        // .fill(egui::Color32::from_hex("#15c").unwrap()),
+                        //     )
+                        //     .clicked()
+                        // {
+                        //     println!("exiting...");
+                        //     std::process::exit(0);
+                        // }
                     });
             });
         });
