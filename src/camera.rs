@@ -9,6 +9,12 @@ impl Plugin for CameraPlugin {
     }
 }
 
+enum Breakpoints {
+    XS = 380,
+    SM = 455,
+    MD = 660,
+}
+
 fn spawn_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle {
         transform: Transform::from_xyz(0.0, 20., 0.0),
@@ -22,13 +28,25 @@ fn resize_camera(
 ) {
     for ev in resize_events.read() {
         for mut transform in query.iter_mut() {
-            //  NOTE: there's a 50 pixel difference added by margin. the downscaling happens at 550
-            //  pixels.
-            if ev.width < 500.0 {
-                let baseline = 225.0;
-                let scale = ev.width.min(ev.height) / baseline;
-                transform.scale = Vec3::new(scale, scale, 1.0);
-            }
+            let baseline = if ev.width < Breakpoints::XS as i32 as f32 {
+                200.0
+            } else if ev.width < Breakpoints::SM as i32 as f32 {
+                225.0
+            } else if ev.width < Breakpoints::MD as i32 as f32 {
+                450.0
+            } else {
+                720.0
+            };
+
+            println!(
+                "dimension: {:?} / baseline: {:?}",
+                ev.width.min(ev.height),
+                baseline
+            );
+
+            let scale = ev.width.min(ev.height) / baseline;
+            println!("scale {:?}", scale);
+            transform.scale = Vec3::new(scale, scale, 1.0);
         }
     }
 }

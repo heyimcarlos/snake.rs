@@ -115,7 +115,11 @@ fn update_menu(
     egui::Window::new("button-group")
         .title_bar(false)
         .default_size(egui::vec2(300.0, 600.0))
-        .default_pos(egui::pos2(
+        // .default_pos(egui::pos2(
+        //     (window.width() - 300.0) / 2.0,
+        //     (window.height() - 400.0) / 2.0,
+        // ))
+        .current_pos(egui::pos2(
             (window.width() - 300.0) / 2.0,
             (window.height() - 400.0) / 2.0,
         ))

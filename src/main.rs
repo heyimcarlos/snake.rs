@@ -5,6 +5,7 @@ mod collision_detection;
 mod colors;
 mod despawn;
 mod food;
+mod resolution;
 mod schedule;
 mod score;
 mod snake;
