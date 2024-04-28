@@ -208,9 +208,14 @@ fn movement_controls(
     let keys_pressed: Vec<KeyCode> = keyboard_input
         .get_just_pressed()
         .filter_map(|key| match key {
-            KeyCode::ArrowUp | KeyCode::ArrowDown | KeyCode::ArrowLeft | KeyCode::ArrowRight => {
-                Some(*key)
-            }
+            KeyCode::ArrowUp
+            | KeyCode::ArrowDown
+            | KeyCode::ArrowLeft
+            | KeyCode::ArrowRight
+            | KeyCode::KeyW
+            | KeyCode::KeyA
+            | KeyCode::KeyS
+            | KeyCode::KeyD => Some(*key),
             _ => None,
         })
         .collect();
@@ -218,10 +223,10 @@ fn movement_controls(
     //  NOTE: Iterate through the collected keys and queue valid directions
     for key in keys_pressed {
         let direction = match key {
-            KeyCode::ArrowUp => Direction::Up,
-            KeyCode::ArrowDown => Direction::Down,
-            KeyCode::ArrowLeft => Direction::Left,
-            KeyCode::ArrowRight => Direction::Right,
+            KeyCode::ArrowUp | KeyCode::KeyW => Direction::Up,
+            KeyCode::ArrowDown | KeyCode::KeyS => Direction::Down,
+            KeyCode::ArrowLeft | KeyCode::KeyA => Direction::Left,
+            KeyCode::ArrowRight | KeyCode::KeyD => Direction::Right,
             _ => continue,
         };
         //  NOTE: new head direction to be queued
