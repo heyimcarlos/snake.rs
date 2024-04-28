@@ -33,6 +33,7 @@ fn state_input_events(
     game_state: Res<State<GameState>>,
     menu_state: Res<State<MenuState>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
+    touches: Res<Touches>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
         match game_state.get() {
@@ -55,9 +56,16 @@ fn state_input_events(
         }
     }
 
+    // if menu_state.get() == &MenuState::Off && touches.any_just_pressed() {
+    //     match game_state.get() {
+    //         GameState::NewGame => next_state.set(GameState::Playing),
+    //         _ => (),
+    //     }
+    // }
+
     //  NOTE: If the menu is not showing and arrow keys are pressed start playing
-    if menu_state.get() == &MenuState::Off
-        && keyboard_input.any_just_pressed([
+    if menu_state.get() == &MenuState::Off && touches.any_just_pressed()
+        || keyboard_input.any_just_pressed([
             KeyCode::ArrowUp,
             KeyCode::ArrowDown,
             KeyCode::ArrowLeft,

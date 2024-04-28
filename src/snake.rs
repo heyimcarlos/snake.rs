@@ -5,8 +5,8 @@ use crate::{
     asset_loader::{ImageAssets, SpritePart},
     board::{Board, TILE_SIZE},
     schedule::InGameSet,
-    state::GameState,
-    util::snake_starting_position,
+    state::{GameState, MenuState},
+    util::{direction_from_vec2, snake_starting_position},
 };
 
 #[derive(Component, Debug)]
@@ -95,7 +95,10 @@ impl Plugin for SnakePlugin {
             })
             .add_systems(OnEnter(GameState::NewGame), spawn_snake)
             .add_systems(OnEnter(GameState::NewGame), load_snake_direction_queue)
-            .add_systems(Update, movement_controls.in_set(InGameSet::UserInput))
+            .add_systems(
+                Update,
+                (movement_controls, touch_movement_controls).in_set(InGameSet::UserInput),
+            )
             .add_systems(
                 Update,
                 (update_position, update_board_position, update_snake_sprite)
@@ -193,6 +196,68 @@ fn update_board_position(
             board.position_translate(pos.x),
             board.position_translate(pos.y),
             1.0,
+        );
+    }
+}
+
+#[derive(Default)]
+pub struct TouchMap(pub(crate) Option<u64>);
+
+fn touch_movement_controls(
+    mut snake_head_query: Query<&mut SnakeHeadDirection, With<SnakeHead>>,
+    touches: Res<Touches>,
+    mut touch_map: Local<TouchMap>,
+    // mut next_state: ResMut<NextState<GameState>>,
+    // game_state: Res<State<GameState>>,
+    // menu_state: Res<State<MenuState>>,
+) {
+    let Ok(mut snake_direction) = snake_head_query.get_single_mut() else {
+        return;
+    };
+
+    //  NOTE: Check if the touchmap should be cleared.
+    if let Some(tm) = touch_map.0 {
+        for released in touches.iter_just_released() {
+            if released.id() == tm {
+                touch_map.0 = None;
+                break;
+            }
+        }
+        for released in touches.iter_just_canceled() {
+            if released.id() == tm {
+                touch_map.0 = None;
+                break;
+            }
+        }
+
+        //  NOTE: if no touches on screen, reset touch map.
+        if touches.iter().count() == 0 {
+            touch_map.0 = None;
+        }
+    }
+
+    for touch in touches.iter() {
+        match *touch_map {
+            TouchMap(None) => {
+                touch_map.0 = Some(touch.id());
+            }
+            TouchMap(Some(tm)) => {
+                if tm == touch.id() {
+                    let direction = touch.start_position() - touch.position();
+                    //  NOTE: Determine if the movement is horizontal or vertical by checking if
+                    //  the abs value of x is greater than the abs value of y, if it is, the
+                    //  direction is horizontal.
+                    let input = direction_from_vec2(direction);
+                    for dir in input.iter() {
+                        snake_direction.queue_direction(*dir);
+                    }
+                }
+            }
+        }
+        info!(
+            "just pressed touch with id: {:?}, at: {:?}",
+            touch.id(),
+            touch.position()
         );
     }
 }
