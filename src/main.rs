@@ -5,7 +5,6 @@ mod collision_detection;
 mod colors;
 mod despawn;
 mod food;
-mod resolution;
 mod schedule;
 mod score;
 mod snake;
@@ -33,11 +32,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 canvas: Some("#snake-canvas".into()),
-                // prevent_default_event_handling: true,
-                // resizable: true,
-                //  NOTE: Turning off default resolution in favor of making the game responsive.
-                // resolution: WindowResolution::new(650.0, 750.0),
-                // mode: bevy::window::WindowMode::Windowed,
+                prevent_default_event_handling: true,
                 ..Default::default()
             }),
             ..Default::default()
