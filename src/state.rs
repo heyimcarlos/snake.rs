@@ -62,6 +62,10 @@ fn state_input_events(
             KeyCode::ArrowDown,
             KeyCode::ArrowLeft,
             KeyCode::ArrowRight,
+            KeyCode::KeyW,
+            KeyCode::KeyA,
+            KeyCode::KeyS,
+            KeyCode::KeyD,
         ])
     {
         match game_state.get() {
