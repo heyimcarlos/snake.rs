@@ -38,14 +38,14 @@ fn resize_camera(
                 720.0
             };
 
-            println!(
-                "dimension: {:?} / baseline: {:?}",
-                ev.width.min(ev.height),
-                baseline
-            );
+            // println!(
+            //     "dimension: {:?} / baseline: {:?}",
+            //     ev.width.min(ev.height),
+            //     baseline
+            // );
 
             let scale = ev.width.min(ev.height) / baseline;
-            println!("scale {:?}", scale);
+            // println!("scale {:?}", scale);
             transform.scale = Vec3::new(scale, scale, 1.0);
         }
     }
