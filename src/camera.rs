@@ -22,6 +22,8 @@ fn resize_camera(
 ) {
     for ev in resize_events.read() {
         for mut transform in query.iter_mut() {
+            //  NOTE: there's a 50 pixel difference added by margin. the downscaling happens at 550
+            //  pixels.
             if ev.width < 500.0 {
                 let baseline = 225.0;
                 let scale = ev.width.min(ev.height) / baseline;
