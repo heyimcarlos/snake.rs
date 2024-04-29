@@ -31,6 +31,7 @@
 - [ ] Add check for random food spawn not within the cells that the snake is occupying
 - [ ] Add sound
 - [ ] Fix the enlarging process (the snake's tail flickers)
+- [ ] Decrease the wasm bundle size
 - [x] Add game UI with `bevy_egui`
   - [x] Load images for button
   - [x] Scoreboard
